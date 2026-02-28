@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Builder UI MVP v1.1</title>
+  <style>
+    :root { --bg:#0f1115; --panel:#171a21; --line:#2a2f3a; --text:#e9edf5; --muted:#a4adbd; --accent:#7aa2ff; --ok:#19c37d; --warn:#ffb020; --bad:#ff5d6c; }
+    * { box-sizing:border-box; font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+    body { margin:0; background:var(--bg); color:var(--text); }
+    header { padding:14px 18px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
+    h1 { margin:0; font-size:18px; }
+    .meta { color:var(--muted); font-size:12px; }
+    .wrap { display:grid; grid-template-columns: 380px 1fr 1fr; gap:12px; padding:12px; min-height: calc(100vh - 56px); }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; overflow:auto; }
+    .panel h2 { margin:0 0 8px; font-size:14px; }
+    .sec { border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px; }
+    .sec h3 { margin:0 0 8px; font-size:13px; color:#d8def0; }
+    label { display:block; font-size:12px; color:var(--muted); margin:8px 0 6px; }
+    input, textarea, button { width:100%; background:#12151b; color:var(--text); border:1px solid #303747; border-radius:8px; padding:8px; font-size:13px; }
+    textarea { min-height:100px; resize:vertical; }
+    .inline { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; }
+    .chip { padding:4px 8px; border-radius:999px; font-size:11px; border:1px solid #39445d; background:#151c2b; }
+    .chip.bad { border-color: #6d2b35; background:#2a1418; color:#ffadb7; }
+    .chip.ok { border-color: #1f5a43; background:#11251d; color:#96f0c8; }
+    .btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+    .btns3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:8px; }
+    button { cursor:pointer; }
+    button:hover { border-color:var(--accent); }
+    .warn { color:var(--warn); font-size:12px; margin-top:6px; }
+    .err { color:var(--bad); font-size:12px; margin-top:6px; }
+    .ok { color:var(--ok); font-size:12px; margin-top:6px; }
+    pre { white-space:pre-wrap; word-break:break-word; background:#11141a; border:1px solid #2b3342; border-radius:8px; padding:10px; font-size:12px; margin:8px 0; }
+
+    .seg { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+    .seg button { padding:7px 6px; font-size:12px; }
+    .seg button.active { background:#1e2d4d; border-color:#5c7ecf; color:#dce8ff; }
+    .seg.seg-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .seg.seg-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+
+    .angle-tools { display:grid; gap:6px; }
+    .angle-pad-wrap { border:1px solid #33405a; border-radius:10px; background:#121826; padding:8px; }
+    .angle-pad {
+      position:relative;
+      width:100%;
+      aspect-ratio:1/1;
+      border:1px solid #3b4b6f;
+      border-radius:8px;
+      background:
+        linear-gradient(to right, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%),
+        linear-gradient(to bottom, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%),
+        #0f1522;
+      cursor:grab;
+      touch-action:none;
+    }
+    .angle-pad.dragging { cursor:grabbing; }
+    .angle-marker {
+      position:absolute;
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      border:2px solid #dce8ff;
+      background:#7aa2ff;
+      transform:translate(-50%, -50%);
+      box-shadow:0 0 0 3px rgba(122,162,255,0.2);
+      pointer-events:none;
+    }
+    .angle-hint { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; margin-top:4px; }
+    .angle-row { display:grid; grid-template-columns:76px 1fr; gap:6px; align-items:center; }
+    .nudge { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+    .nudge button, .preset-angle button { padding:6px; font-size:12px; }
+    .preset-angle { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>프롬프트 제조 UI MVP v1.1 (Compiler + Lexicon + Lint)</h1>
+    <div class="meta">Spec↔Surface 분리 · Reserved Token Lint Gate</div>
+  </header>
+  <div class="wrap">
+    <section class="panel" id="controls">
+      <h2>1) 옵션 선택</h2>
+      <div class="sec">
+        <h3>Scene</h3>
+        <label>Room</label>
+        <div class="seg" data-input="room">
+          <button type="button" data-value="living_room">living_room</button>
+          <button type="button" data-value="bedroom">bedroom</button>
+          <button type="button" data-value="study">study</button>
+          <button type="button" data-value="dining">dining</button>
+        </div>
+        <input type="hidden" id="room" value="living_room" />
+
+        <label>Time</label>
+        <div class="seg seg-2" data-input="time">
+          <button type="button" data-value="day">day</button>
+          <button type="button" data-value="evening">evening</button>
+          <button type="button" data-value="night">night</button>
+        </div>
+        <input type="hidden" id="time" value="evening" />
+
+        <label>Mood</label>
+        <div class="seg" data-input="mood">
+          <button type="button" data-value="minimal_warm">minimal_warm</button>
+          <button type="button" data-value="modern_luxury">modern_luxury</button>
+          <button type="button" data-value="cozy_family">cozy_family</button>
+        </div>
+        <input type="hidden" id="mood" value="minimal_warm" />
+      </div>
+
+      <div class="sec">
+        <h3>Camera (빠른 의도 입력)</h3>
+        <label>Angle Pad (드래그로 Pitch/Yaw 동시 제어 · 5도 스냅)</label>
+        <div class="angle-tools">
+          <div class="angle-pad-wrap">
+            <div id="anglePad" class="angle-pad" aria-label="camera-angle-pad" tabindex="0">
+              <div id="angleMarker" class="angle-marker"></div>
+            </div>
+            <div class="angle-hint">
+              <span>Pitch: up (+)</span>
+              <span>Pitch: down (-)</span>
+            </div>
+            <div class="angle-hint">
+              <span>Yaw: left (-)</span>
+              <span>Yaw: right (+)</span>
+            </div>
+          </div>
+          <div class="angle-row"><span>Pitch</span><input id="pitch" type="number" step="5" value="20" /></div>
+          <div class="nudge" data-angle-target="pitch">
+            <button type="button" data-delta="-10">-10</button>
+            <button type="button" data-delta="-5">-5</button>
+            <button type="button" data-delta="5">+5</button>
+            <button type="button" data-delta="10">+10</button>
+          </div>
+          <div class="angle-row"><span>Yaw</span><input id="yaw" type="number" step="5" value="30" /></div>
+          <div class="nudge" data-angle-target="yaw">
+            <button type="button" data-delta="-10">-10</button>
+            <button type="button" data-delta="-5">-5</button>
+            <button type="button" data-delta="5">+5</button>
+            <button type="button" data-delta="10">+10</button>
+          </div>
+        </div>
+
+        <label>Quick Angle Presets (Yaw 기준)</label>
+        <div class="preset-angle" data-preset-target="yaw">
+          <button type="button" data-value="-30">left 30</button>
+          <button type="button" data-value="-20">left 20</button>
+          <button type="button" data-value="-10">left 10</button>
+          <button type="button" data-value="10">right 10</button>
+          <button type="button" data-value="20">right 20</button>
+          <button type="button" data-value="30">right 30</button>
+        </div>
+
+        <div class="inline">
+          <div>
+            <label>Distance</label>
+            <div class="seg seg-2" data-input="distance">
+              <button type="button" data-value="medium">medium</button>
+              <button type="button" data-value="wide">wide</button>
+              <button type="button" data-value="close">close</button>
+            </div>
+            <input type="hidden" id="distance" value="medium" />
+          </div>
+          <div>
+            <label>Lens</label>
+            <div class="seg seg-2" data-input="lens">
+              <button type="button" data-value="35-50">35-50</button>
+              <button type="button" data-value="24-35">24-35</button>
+              <button type="button" data-value="50-70">50-70</button>
+            </div>
+            <input type="hidden" id="lens" value="35-50" />
+          </div>
+        </div>
+        <div class="warn">카메라 입력은 정밀 제어보다 의도 전달용입니다. 5도/10도 단위 권장.</div>
+      </div>
+
+      <div class="sec">
+        <h3>Product</h3>
+        <label>Scale</label>
+        <div class="seg" data-input="scale">
+          <button type="button" data-value="portable">portable</button>
+          <button type="button" data-value="onyx_class">onyx_class</button>
+          <button type="button" data-value="tower">tower</button>
+        </div>
+        <input type="hidden" id="scale" value="onyx_class" />
+
+        <label>Placement</label>
+        <div class="seg seg-2" data-input="placement">
+          <button type="button" data-value="side_table">side_table</button>
+          <button type="button" data-value="tv_console">tv_console</button>
+          <button type="button" data-value="shelf">shelf</button>
+          <button type="button" data-value="floor_near_wall">floor_near_wall</button>
+        </div>
+        <input type="hidden" id="placement" value="side_table" />
+
+        <label>Keep-out Zone</label>
+        <div class="seg" data-input="keepout">
+          <button type="button" data-value="small">small</button>
+          <button type="button" data-value="medium">medium</button>
+          <button type="button" data-value="large">large</button>
+        </div>
+        <input type="hidden" id="keepout" value="medium" />
+      </div>
+
+      <div class="sec">
+        <h3>Props & Output</h3>
+        <label>Prop Density</label>
+        <div class="seg" data-input="density">
+          <button type="button" data-value="low">low</button>
+          <button type="button" data-value="medium">medium</button>
+          <button type="button" data-value="high">high</button>
+        </div>
+        <input type="hidden" id="density" value="low" />
+
+        <label>Master Ratio</label>
+        <div class="seg seg-2" data-input="masterRatio">
+          <button type="button" data-value="3:2">3:2</button>
+          <button type="button" data-value="4:3">4:3</button>
+        </div>
+        <input type="hidden" id="masterRatio" value="3:2" />
+
+        <label>Derivatives</label>
+        <div class="inline">
+          <label><input id="d169" type="checkbox" checked />16:9</label>
+          <label><input id="d11" type="checkbox" checked />1:1</label>
+        </div>
+        <label><input id="d45" type="checkbox" checked />4:5</label>
+      </div>
+
+      <div class="btns3">
+        <button id="generate" type="button">Generate</button>
+        <button id="savePreset" type="button">Save Preset</button>
+        <button id="loadPreset" type="button">Load Preset</button>
+      </div>
+      <div class="btns">
+        <button id="markPass" type="button">Mark Pass</button>
+        <button id="markFail" type="button">Mark Fail</button>
+      </div>
+      <div class="btns">
+        <button id="exportLog" type="button">Export Log (MD)</button>
+        <button id="reset" type="button">Reset</button>
+      </div>
+      <div id="status"></div>
+    </section>
+
+    <section class="panel">
+      <h2>2) Scene Spec / Validation</h2>
+      <div class="chips" id="gates"></div>
+      <pre id="specView"></pre>
+      <h2>세션 메모</h2>
+      <textarea id="notes" placeholder="왜 pass/fail 인지, 다음 수정 포인트를 짧게 기록"></textarea>
+    </section>
+
+    <section class="panel">
+      <h2>3) Prompt Output</h2>
+      <label>Vizcom 생성 프롬프트</label>
+      <pre id="genPrompt"></pre>
+      <button onclick="copyText('genPrompt')">Copy Prompt</button>
+      <label>Negative Prompt</label>
+      <pre id="negPrompt"></pre>
+      <button onclick="copyText('negPrompt')">Copy Negative</button>
+      <label>Revision Prompt (각도/배치/제품강조)</label>
+      <pre id="revPrompt"></pre>
+      <button onclick="copyText('revPrompt')">Copy Revision</button>
+    </section>
+  </div>
+
+<script>
+const brandEmbrace = [
+  "harmonious interplay of sound, light, and design",
+  "evocative in-situ moment in curated home interior",
+  "warm natural materials (wood, fabric, stone), tasteful composition"
+];
+const brandAvoid = [
+  "posed portrait", "camera eye contact", "overly busy decor", "sterile mono-material look",
+  "harsh unrealistic reflections", "front-facing flat product shot"
+];
+
+const SURFACE_LEXICON = {
+  scale_surface: {
+    portable: "compact carry-friendly speaker, tabletop scale",
+    onyx_class: "compact tabletop home speaker, approx 28–32cm tall, single hero product",
+    tower: "tall floorstanding home speaker, approx 90–120cm tall, single hero product"
+  },
+  placement_surface: {
+    side_table: "on a side table",
+    tv_console: "on a TV console",
+    shelf: "on a shelf",
+    floor_near_wall: "on the floor near a wall"
+  },
+  keepout_surface: {
+    small: "small keep-out zone",
+    medium: "medium keep-out zone with clear negative space around the product",
+    large: "large keep-out zone with generous negative space around the product"
+  }
+};
+
+const RESERVED_TOKENS = [
+  "onyx_class",
+  "portable",
+  "tower",
+  "brand lock",
+  "http://",
+  "https://"
+];
+
+const RESERVED_PATTERNS = [
+  /\b\w+_class\b/gi,
+  /\bSKU\b/gi,
+  /\bmodel\s*no\.?\b/gi
+];
+
+const ENABLE_STRICT_NEG = false;
+
+let logs = [];
+
+const room = document.getElementById('room');
+const time = document.getElementById('time');
+const mood = document.getElementById('mood');
+const pitch = document.getElementById('pitch');
+const yaw = document.getElementById('yaw');
+const distance = document.getElementById('distance');
+const lens = document.getElementById('lens');
+const scale = document.getElementById('scale');
+const placement = document.getElementById('placement');
+const keepout = document.getElementById('keepout');
+const density = document.getElementById('density');
+const masterRatio = document.getElementById('masterRatio');
+const d169 = document.getElementById('d169');
+const d11 = document.getElementById('d11');
+const d45 = document.getElementById('d45');
+const gates = document.getElementById('gates');
+const status = document.getElementById('status');
+const notes = document.getElementById('notes');
+const specView = document.getElementById('specView');
+const genPrompt = document.getElementById('genPrompt');
+const negPrompt = document.getElementById('negPrompt');
+const revPrompt = document.getElementById('revPrompt');
+const anglePad = document.getElementById('anglePad');
+const angleMarker = document.getElementById('angleMarker');
+
+function setSegmentValue(inputId, value){
+  const input = document.getElementById(inputId);
+  input.value = value;
+  document.querySelectorAll(`.seg[data-input="${inputId}"] button`).forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.value === value);
+  });
+}
+
+function initSegments(){
+  document.querySelectorAll('.seg[data-input]').forEach(group=>{
+    const inputId = group.dataset.input;
+    const input = document.getElementById(inputId);
+    group.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=> setSegmentValue(inputId, btn.dataset.value));
+    });
+    setSegmentValue(inputId, input.value);
+  });
+}
+
+function updateAngle(id, nextValue){
+  document.getElementById(id).value = Number(nextValue);
+}
+
+function clamp(num, min, max){
+  return Math.min(max, Math.max(min, num));
+}
+
+function syncAnglePadFromInputs(){
+  const yawValue = clamp(Number(yaw.value) || 0, -80, 80);
+  const pitchValue = clamp(Number(pitch.value) || 0, -60, 60);
+  yaw.value = yawValue;
+  pitch.value = pitchValue;
+
+  const xRatio = (yawValue + 80) / 160;
+  const yRatio = (60 - pitchValue) / 120;
+  angleMarker.style.left = `${xRatio * 100}%`;
+  angleMarker.style.top = `${yRatio * 100}%`;
+}
+
+function setAngleFromPadPointer(clientX, clientY){
+  const rect = anglePad.getBoundingClientRect();
+  const x = clamp(clientX - rect.left, 0, rect.width);
+  const y = clamp(clientY - rect.top, 0, rect.height);
+
+  const yawRaw = (x / rect.width) * 160 - 80;
+  const pitchRaw = 60 - (y / rect.height) * 120;
+
+  const yawSnap = Math.round(yawRaw / 5) * 5;
+  const pitchSnap = Math.round(pitchRaw / 5) * 5;
+
+  yaw.value = clamp(yawSnap, -80, 80);
+  pitch.value = clamp(pitchSnap, -60, 60);
+  syncAnglePadFromInputs();
+}
+
+function initAnglePad(){
+  let dragging = false;
+
+  anglePad.addEventListener('pointerdown', (event)=>{
+    dragging = true;
+    anglePad.classList.add('dragging');
+    anglePad.setPointerCapture(event.pointerId);
+    setAngleFromPadPointer(event.clientX, event.clientY);
+  });
+
+  anglePad.addEventListener('pointermove', (event)=>{
+    if (!dragging) return;
+    setAngleFromPadPointer(event.clientX, event.clientY);
+  });
+
+  anglePad.addEventListener('pointerup', (event)=>{
+    dragging = false;
+    anglePad.classList.remove('dragging');
+    anglePad.releasePointerCapture(event.pointerId);
+  });
+
+  anglePad.addEventListener('pointercancel', ()=>{
+    dragging = false;
+    anglePad.classList.remove('dragging');
+  });
+
+  pitch.addEventListener('input', syncAnglePadFromInputs);
+  yaw.addEventListener('input', syncAnglePadFromInputs);
+
+  anglePad.addEventListener('keydown', (event)=>{
+    const keyDelta = { ArrowLeft: [-5, 0], ArrowRight: [5, 0], ArrowUp: [0, 5], ArrowDown: [0, -5] }[event.key];
+    if (!keyDelta) return;
+    event.preventDefault();
+    yaw.value = Number(yaw.value || 0) + keyDelta[0];
+    pitch.value = Number(pitch.value || 0) + keyDelta[1];
+    syncAnglePadFromInputs();
+  });
+
+  syncAnglePadFromInputs();
+}
+
+function initAngleTools(){
+  document.querySelectorAll('.nudge').forEach(group=>{
+    const target = group.dataset.angleTarget;
+    group.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const current = Number(document.getElementById(target).value || 0);
+        updateAngle(target, current + Number(btn.dataset.delta));
+      });
+    });
+  });
+
+  document.querySelectorAll('.preset-angle[data-preset-target]').forEach(group=>{
+    const target = group.dataset.presetTarget;
+    group.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=> updateAngle(target, Number(btn.dataset.value)));
+    });
+  });
+}
+
+function getState(){
+  const derivatives = [];
+  if (d169.checked) derivatives.push("16:9");
+  if (d11.checked) derivatives.push("1:1");
+  if (d45.checked) derivatives.push("4:5");
+
+  const scaleCode = scale.value;
+  const placementCode = placement.value;
+  const keepoutCode = keepout.value;
+
+  return {
+    scene: { room: room.value, time: time.value, mood: mood.value },
+    camera: { pitch: Number(pitch.value), yaw: Number(yaw.value), distance: distance.value, lens: lens.value },
+    product: {
+      scale_code: scaleCode,
+      scale_desc: SURFACE_LEXICON.scale_surface[scaleCode] || "home speaker, single hero product",
+      placement_code: placementCode,
+      placement_desc: SURFACE_LEXICON.placement_surface[placementCode] || "in a home interior",
+      keep_out: keepoutCode,
+      keepout_desc: SURFACE_LEXICON.keepout_surface[keepoutCode] || "clear keep-out zone around the product"
+    },
+    props: { density: density.value, avoid_near_product: true },
+    output: { master_ratio: masterRatio.value, derivatives },
+    brand_lock: { embrace: "required", avoid: "required" }
+  };
+}
+
+function validateSpec(spec){
+  const errors = [];
+  const warnings = [];
+
+  if (!Number.isFinite(spec.camera.pitch) || !Number.isFinite(spec.camera.yaw)) errors.push("Pitch/Yaw는 숫자여야 합니다.");
+  if (spec.camera.pitch % 5 !== 0 || spec.camera.yaw % 5 !== 0) warnings.push("카메라 각도는 5도 단위를 권장합니다.");
+  if (Math.abs(spec.camera.pitch) > 60 || Math.abs(spec.camera.yaw) > 80) warnings.push("극단 각도는 장면 왜곡 위험이 있어요.");
+  if (spec.camera.distance !== "medium") warnings.push("권장 distance는 medium");
+  if (spec.props.density === "high" && spec.product.keep_out === "large") warnings.push("prop density high + keep-out large 충돌 가능");
+  if (spec.output.derivatives.length === 0) errors.push("At least one derivative ratio required");
+  if (!spec.product.scale_desc) errors.push("scale_code에 대응하는 scale_desc가 없습니다.");
+  if (!spec.product.placement_desc) errors.push("placement_code에 대응하는 placement_desc가 없습니다.");
+  if (!spec.product.keepout_desc) errors.push("keep_out에 대응하는 keepout_desc가 없습니다.");
+
+  return { errors, warnings };
+}
+
+function injectBrandGuard(spec){
+  spec.brand_guard = { embrace: brandEmbrace, avoid: brandAvoid };
+  return spec;
+}
+
+function composePrompt(spec){
+  const yawDir = spec.camera.yaw >= 0 ? `right ${Math.abs(spec.camera.yaw)}°` : `left ${Math.abs(spec.camera.yaw)}°`;
+  const derivatives = spec.output.derivatives.join(', ');
+  const gen = [
+    `${spec.scene.mood} ${spec.scene.room} interior`,
+    'in-situ lifestyle scene',
+    `${spec.scene.time} lighting`,
+    `${spec.product.scale_desc}`,
+    `${spec.product.placement_desc}`,
+    `${spec.product.keepout_desc}`,
+    'three-quarter view',
+    `pitch ${spec.camera.pitch}°`,
+    `yaw ${yawDir}`,
+    `${spec.camera.distance} distance`,
+    `${spec.camera.lens}mm perspective`,
+    'warm natural materials wood fabric stone',
+    'tasteful composition',
+    `crop-safe master ${spec.output.master_ratio} for ${derivatives}`,
+    `brand DNA: ${spec.brand_guard.embrace.join('; ')}`
+  ].join(', ');
+
+  const negParts = [
+    'watermark',
+    'signature',
+    'text overlay',
+    'gibberish text',
+    'distorted furniture'
+  ];
+
+  if (ENABLE_STRICT_NEG) {
+    negParts.push('duplicate product', 'multiple speakers', 'clutter near product');
+  }
+
+  const neg = negParts.join(', ');
+
+  const rev = [
+    `Revision A (angle): keep same scene, adjust camera in 5-degree steps near pitch ${spec.camera.pitch} / yaw ${spec.camera.yaw}.`,
+    'Revision B (props): reduce foreground props near product and clear keep-out zone.',
+    'Revision C (presence): increase product visibility with subtle contrast and light focus without breaking natural look.'
+  ].join(' ');
+
+  return { gen, neg, rev };
+}
+
+function lintSurface(text){
+  const hits = [];
+  const lower = text.toLowerCase();
+
+  RESERVED_TOKENS.forEach((token)=>{
+    if (lower.includes(token.toLowerCase())) hits.push(`token:${token}`);
+  });
+
+  RESERVED_PATTERNS.forEach((pattern)=>{
+    const matcher = new RegExp(pattern.source, pattern.flags);
+    if (matcher.test(text)) hits.push(`pattern:${pattern}`);
+  });
+
+  return { ok: hits.length === 0, hits };
+}
+
+function renderGates({errors, warnings, lintHits = []}){
+  gates.innerHTML = '';
+  if (errors.length === 0) addChip('Validation Pass', 'ok');
+  errors.forEach(e => addChip(e, 'bad'));
+  warnings.forEach(w => addChip(w, 'warn'));
+
+  if (lintHits.length === 0) {
+    addChip('Lint Gate Pass', 'ok');
+  } else {
+    lintHits.forEach(hit => addChip(`Lint Fail: ${hit}`, 'bad'));
+  }
+}
+
+function addChip(text, type){
+  const div = document.createElement('div');
+  div.className = `chip ${type==='ok'?'ok': type==='bad'?'bad':''}`;
+  div.textContent = text;
+  gates.appendChild(div);
+}
+
+function setStatus(msg, type='ok'){ status.className = type; status.textContent = msg; }
+
+function generate(){
+  let spec = getState();
+  const result = validateSpec(spec);
+  if (result.errors.length){
+    renderGates({ ...result, lintHits: [] });
+    setStatus('생성 차단: Validation 오류를 먼저 수정하세요.', 'err');
+    return;
+  }
+
+  spec = injectBrandGuard(spec);
+  const prompt = composePrompt(spec);
+
+  const lintInputs = [prompt.gen, prompt.neg, prompt.rev];
+  const lintHits = lintInputs.flatMap((text)=> lintSurface(text).hits);
+  renderGates({ ...result, lintHits });
+
+  if (lintHits.length){
+    setStatus(`생성 차단: reserved token 누출(${lintHits.join(', ')})`, 'err');
+    return;
+  }
+
+  specView.textContent = JSON.stringify(spec, null, 2);
+  genPrompt.textContent = prompt.gen;
+  negPrompt.textContent = prompt.neg;
+  revPrompt.textContent = prompt.rev;
+  localStorage.setItem('currentSpec', JSON.stringify(spec));
+  setStatus('프롬프트 생성 완료.', 'ok');
+}
+
+function copyText(id){
+  navigator.clipboard.writeText(document.getElementById(id).textContent || '').then(()=>setStatus('복사 완료', 'ok'));
+}
+
+function savePreset(){
+  localStorage.setItem('preset_v1', JSON.stringify(getState()));
+  setStatus('Preset 저장 완료', 'ok');
+}
+function loadPreset(){
+  const raw = localStorage.getItem('preset_v1');
+  if (!raw){ setStatus('저장된 preset이 없습니다.', 'warn'); return; }
+  const s = JSON.parse(raw);
+  setSegmentValue('room', s.scene.room);
+  setSegmentValue('time', s.scene.time);
+  setSegmentValue('mood', s.scene.mood);
+  pitch.value=s.camera.pitch; yaw.value=String(s.camera.yaw);
+  setSegmentValue('distance', s.camera.distance);
+  setSegmentValue('lens', s.camera.lens);
+  setSegmentValue('scale', s.product.scale_code || s.product.scale);
+  setSegmentValue('placement', s.product.placement_code || s.product.placement);
+  setSegmentValue('keepout', s.product.keep_out);
+  setSegmentValue('density', s.props.density);
+  setSegmentValue('masterRatio', s.output.master_ratio);
+  d169.checked=s.output.derivatives.includes('16:9'); d11.checked=s.output.derivatives.includes('1:1'); d45.checked=s.output.derivatives.includes('4:5');
+  syncAnglePadFromInputs();
+  setStatus('Preset 불러오기 완료', 'ok');
+}
+
+function logResult(pass){
+  const spec = JSON.parse(localStorage.getItem('currentSpec') || 'null');
+  if (!spec){ setStatus('먼저 Generate를 실행하세요.', 'warn'); return; }
+  logs.push({ time: new Date().toISOString(), pass, notes: notes.value.trim(), spec });
+  setStatus(pass ? 'Pass 기록됨' : 'Fail 기록됨', pass ? 'ok' : 'warn');
+}
+
+function exportLog(){
+  if (!logs.length){ setStatus('내보낼 로그가 없습니다.', 'warn'); return; }
+  let md = '# Session Log\n\n';
+  logs.forEach((l,i)=>{
+    md += `## ${i+1}. ${l.pass?'PASS':'FAIL'} - ${l.time}\n`;
+    md += `- notes: ${l.notes || '(none)'}\n`;
+    md += `- scene: ${l.spec.scene.room}/${l.spec.scene.time}/${l.spec.scene.mood}\n`;
+    md += `- camera: pitch ${l.spec.camera.pitch}, yaw ${l.spec.camera.yaw}, ${l.spec.camera.distance}\n\n`;
+  });
+  const blob = new Blob([md], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'session_log.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setStatus('로그 내보내기 완료', 'ok');
+}
+
+function resetForm(){
+  localStorage.removeItem('currentSpec');
+  specView.textContent=''; genPrompt.textContent=''; negPrompt.textContent=''; revPrompt.textContent='';
+  gates.innerHTML=''; notes.value='';
+  setSegmentValue('room', 'living_room');
+  setSegmentValue('time', 'evening');
+  setSegmentValue('mood', 'minimal_warm');
+  setSegmentValue('distance', 'medium');
+  setSegmentValue('lens', '35-50');
+  setSegmentValue('scale', 'onyx_class');
+  setSegmentValue('placement', 'side_table');
+  setSegmentValue('keepout', 'medium');
+  setSegmentValue('density', 'low');
+  setSegmentValue('masterRatio', '3:2');
+  d169.checked = true; d11.checked = true; d45.checked = true;
+  pitch.value = 20;
+  yaw.value = 30;
+  syncAnglePadFromInputs();
+  setStatus('기본값으로 초기화 완료', 'ok');
+}
+
+initSegments();
+initAngleTools();
+initAnglePad();
+
+const generateBtn = document.getElementById('generate');
+const savePresetBtn = document.getElementById('savePreset');
+const loadPresetBtn = document.getElementById('loadPreset');
+const markPassBtn = document.getElementById('markPass');
+const markFailBtn = document.getElementById('markFail');
+const exportLogBtn = document.getElementById('exportLog');
+const resetBtn = document.getElementById('reset');
+
+generateBtn.addEventListener('click', generate);
+savePresetBtn.addEventListener('click', savePreset);
+loadPresetBtn.addEventListener('click', loadPreset);
+markPassBtn.addEventListener('click', ()=>logResult(true));
+markFailBtn.addEventListener('click', ()=>logResult(false));
+exportLogBtn.addEventListener('click', exportLog);
+resetBtn.addEventListener('click', resetForm);
+</script>
+</body>
+</html>
