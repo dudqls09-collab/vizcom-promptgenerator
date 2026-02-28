@@ -71,6 +71,9 @@
     .nudge { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
     .nudge button, .preset-angle button { padding:6px; font-size:12px; }
     .preset-angle { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:6px; }
+    .custom-add { display:grid; grid-template-columns:1fr 84px; gap:6px; margin-top:6px; }
+    .preview-frame { width:100%; border:1px dashed #3b4b6f; border-radius:10px; background:#0f1522; display:grid; place-items:center; color:var(--muted); font-size:12px; }
+    .preview-frame .inner { width:84%; height:84%; border:1px solid #445680; border-radius:8px; display:grid; place-items:center; }
   </style>
 </head>
 <body>
@@ -84,13 +87,16 @@
       <div class="sec">
         <h3>Scene</h3>
         <label>Room</label>
-        <div class="seg" data-input="room">
-          <button type="button" data-value="living_room">living_room</button>
-          <button type="button" data-value="bedroom">bedroom</button>
-          <button type="button" data-value="study">study</button>
-          <button type="button" data-value="dining">dining</button>
+        <select id="room">
+          <option value="living_room">living_room</option>
+          <option value="bedroom">bedroom</option>
+          <option value="study">study</option>
+          <option value="dining">dining</option>
+        </select>
+        <div class="custom-add">
+          <input id="customRoom" placeholder="직접 입력 room type" />
+          <button id="addRoom" type="button">적용</button>
         </div>
-        <input type="hidden" id="room" value="living_room" />
 
         <label>Time</label>
         <div class="seg seg-2" data-input="time">
@@ -177,22 +183,16 @@
 
       <div class="sec">
         <h3>Product</h3>
-        <label>Scale</label>
-        <div class="seg" data-input="scale">
-          <button type="button" data-value="portable">portable</button>
-          <button type="button" data-value="onyx_class">onyx_class</button>
-          <button type="button" data-value="tower">tower</button>
-        </div>
-        <input type="hidden" id="scale" value="onyx_class" />
+        <label>제품 길이(cm)</label>
+        <input id="lengthSlider" type="range" min="0" max="3" step="1" value="1" />
+        <div id="lengthLabel" class="meta"></div>
 
         <label>Placement</label>
-        <div class="seg seg-2" data-input="placement">
-          <button type="button" data-value="side_table">side_table</button>
-          <button type="button" data-value="tv_console">tv_console</button>
-          <button type="button" data-value="shelf">shelf</button>
-          <button type="button" data-value="floor_near_wall">floor_near_wall</button>
+        <select id="placement"></select>
+        <div class="custom-add">
+          <input id="customPlacement" placeholder="직접 입력 placement" />
+          <button id="addPlacement" type="button">적용</button>
         </div>
-        <input type="hidden" id="placement" value="side_table" />
 
         <label>Keep-out Zone</label>
         <div class="seg" data-input="keepout">
@@ -216,9 +216,12 @@
         <label>Master Ratio</label>
         <div class="seg seg-2" data-input="masterRatio">
           <button type="button" data-value="3:2">3:2</button>
-          <button type="button" data-value="4:3">4:3</button>
+          <button type="button" data-value="1:1">1:1</button>
         </div>
         <input type="hidden" id="masterRatio" value="3:2" />
+
+        <label>Ratio Preview</label>
+        <div id="ratioPreview" class="preview-frame"><div class="inner">master ratio preview</div></div>
 
         <label>Derivatives</label>
         <div class="inline">
@@ -277,12 +280,26 @@ const brandAvoid = [
   "harsh unrealistic reflections", "front-facing flat product shot"
 ];
 
+const LENGTH_BUCKETS = [
+  { id: 'length_10', value_cm: 10, label: '약 10cm', surface: 'compact tabletop product, about 10cm length' },
+  { id: 'length_20', value_cm: 20, label: '약 20cm', surface: 'small tabletop product, about 20cm length' },
+  { id: 'length_35', value_cm: 35, label: '약 35cm', surface: 'mid-size product, about 35cm length' },
+  { id: 'length_50_plus', value_cm: 50, label: '50cm 이상', surface: 'large product, 50cm or longer footprint' }
+];
+
+const ROOM_PLACEMENT_RULES = {
+  living_room: ['side_table', 'tv_console', 'shelf', 'floor_near_wall'],
+  bedroom: ['side_table', 'shelf'],
+  study: ['side_table', 'shelf'],
+  dining: ['shelf', 'floor_near_wall']
+};
+
+const CUSTOM_VALUES = {
+  rooms: new Set(),
+  placementsByRoom: {}
+};
+
 const SURFACE_LEXICON = {
-  scale_surface: {
-    portable: "compact carry-friendly speaker, tabletop scale",
-    onyx_class: "compact tabletop home speaker, approx 28–32cm tall, single hero product",
-    tower: "tall floorstanding home speaker, approx 90–120cm tall, single hero product"
-  },
   room_surface: {
     living_room: 'living room',
     bedroom: 'bedroom',
@@ -323,9 +340,6 @@ const SURFACE_LEXICON = {
 };
 
 const RESERVED_TOKENS = [
-  "onyx_class",
-  "portable",
-  "tower",
   "brand lock",
   "http://",
   "https://"
@@ -348,7 +362,8 @@ const pitch = document.getElementById('pitch');
 const yaw = document.getElementById('yaw');
 const distance = document.getElementById('distance');
 const lens = document.getElementById('lens');
-const scale = document.getElementById('scale');
+const lengthSlider = document.getElementById('lengthSlider');
+const lengthLabel = document.getElementById('lengthLabel');
 const placement = document.getElementById('placement');
 const keepout = document.getElementById('keepout');
 const density = document.getElementById('density');
@@ -365,6 +380,11 @@ const negPrompt = document.getElementById('negPrompt');
 const revPrompt = document.getElementById('revPrompt');
 const anglePad = document.getElementById('anglePad');
 const angleMarker = document.getElementById('angleMarker');
+const ratioPreview = document.getElementById('ratioPreview');
+const customRoomInput = document.getElementById('customRoom');
+const addRoomBtn = document.getElementById('addRoom');
+const customPlacementInput = document.getElementById('customPlacement');
+const addPlacementBtn = document.getElementById('addPlacement');
 
 function setSegmentValue(inputId, value){
   const input = document.getElementById(inputId);
@@ -383,6 +403,74 @@ function initSegments(){
     });
     setSegmentValue(inputId, input.value);
   });
+}
+
+function updateRatioPreview(){
+  ratioPreview.style.aspectRatio = masterRatio.value.replace(':', '/');
+}
+
+function getLengthBucket(){
+  return LENGTH_BUCKETS[Number(lengthSlider.value)] || LENGTH_BUCKETS[0];
+}
+
+function updateLengthLabel(){
+  const bucket = getLengthBucket();
+  lengthLabel.textContent = `${bucket.label} · ${bucket.surface}`;
+}
+
+function allowedPlacementCodesForRoom(roomCode){
+  return ROOM_PLACEMENT_RULES[roomCode] || Object.keys(SURFACE_LEXICON.placement_surface);
+}
+
+function getPlacementOptionsForRoom(roomCode){
+  const base = allowedPlacementCodesForRoom(roomCode).map(code => ({
+    code,
+    desc: SURFACE_LEXICON.placement_surface[code] || code
+  }));
+  const custom = (CUSTOM_VALUES.placementsByRoom[roomCode] || []).map(value => ({ code: value, desc: value }));
+  return [...base, ...custom];
+}
+
+function refreshPlacementOptions(){
+  const roomCode = room.value;
+  const options = getPlacementOptionsForRoom(roomCode);
+  placement.innerHTML = options.map(opt=>`<option value="${opt.code}">${opt.desc}</option>`).join('');
+
+  const prevValue = placement.dataset.prevValue || placement.value;
+  const isValid = options.some(opt=>opt.code === prevValue);
+  if (isValid) {
+    placement.value = prevValue;
+  } else if (options.length) {
+    placement.value = options[0].code;
+    setStatus('Room 변경으로 Placement가 유효값으로 자동 조정되었습니다.', 'warn');
+  }
+  placement.dataset.prevValue = placement.value;
+}
+
+function addCustomRoom(){
+  const value = customRoomInput.value.trim();
+  if (!value) return;
+  if (!Array.from(room.options).some(opt => opt.value === value)) {
+    room.insertAdjacentHTML('beforeend', `<option value="${value}">${value}</option>`);
+    CUSTOM_VALUES.rooms.add(value);
+  }
+  room.value = value;
+  customRoomInput.value = '';
+  refreshPlacementOptions();
+}
+
+function addCustomPlacement(){
+  const value = customPlacementInput.value.trim();
+  if (!value) return;
+  const roomCode = room.value;
+  if (!CUSTOM_VALUES.placementsByRoom[roomCode]) CUSTOM_VALUES.placementsByRoom[roomCode] = [];
+  if (!CUSTOM_VALUES.placementsByRoom[roomCode].includes(value)) {
+    CUSTOM_VALUES.placementsByRoom[roomCode].push(value);
+  }
+  customPlacementInput.value = '';
+  refreshPlacementOptions();
+  placement.value = value;
+  placement.dataset.prevValue = value;
 }
 
 function updateAngle(id, nextValue){
@@ -487,7 +575,7 @@ function getState(){
   if (d11.checked) derivatives.push("1:1");
   if (d45.checked) derivatives.push("4:5");
 
-  const scaleCode = scale.value;
+  const lengthBucket = getLengthBucket();
   const placementCode = placement.value;
   const keepoutCode = keepout.value;
 
@@ -509,10 +597,12 @@ function getState(){
       lens_desc: SURFACE_LEXICON.lens_surface[lens.value] || lens.value
     },
     product: {
-      scale_code: scaleCode,
-      scale_desc: SURFACE_LEXICON.scale_surface[scaleCode] || "home speaker, single hero product",
+      length_bucket: lengthBucket.id,
+      length_cm: lengthBucket.value_cm,
+      length_desc: lengthBucket.label,
+      scale_desc: lengthBucket.surface,
       placement_code: placementCode,
-      placement_desc: SURFACE_LEXICON.placement_surface[placementCode] || "in a home interior",
+      placement_desc: SURFACE_LEXICON.placement_surface[placementCode] || placementCode,
       keep_out: keepoutCode,
       keepout_desc: SURFACE_LEXICON.keepout_surface[keepoutCode] || "clear keep-out zone around the product"
     },
@@ -532,11 +622,17 @@ function validateSpec(spec){
   if (spec.camera.distance_code !== "medium") warnings.push("권장 distance는 medium");
   if (spec.props.density === "high" && spec.product.keep_out === "large") warnings.push("prop density high + keep-out large 충돌 가능");
   if (spec.output.derivatives.length === 0) errors.push("At least one derivative ratio required");
-  if (!spec.product.scale_desc) errors.push("scale_code에 대응하는 scale_desc가 없습니다.");
+  if (!spec.product.scale_desc) errors.push("length bucket에 대응하는 scale_desc가 없습니다.");
   if (!spec.product.placement_desc) errors.push("placement_code에 대응하는 placement_desc가 없습니다.");
   if (!spec.product.keepout_desc) errors.push("keep_out에 대응하는 keepout_desc가 없습니다.");
   if (!spec.scene.room_desc || !spec.scene.time_desc || !spec.scene.mood_desc) errors.push("scene code에 대응하는 surface desc가 없습니다.");
   if (!spec.camera.distance_desc || !spec.camera.lens_desc) errors.push("camera code에 대응하는 surface desc가 없습니다.");
+  if (spec.output.master_ratio !== '1:1' && spec.output.master_ratio !== '3:2') errors.push("Master ratio는 1:1 또는 3:2만 허용됩니다.");
+
+  const validPlacements = getPlacementOptionsForRoom(spec.scene.room_code).map(opt => opt.code);
+  if (!validPlacements.includes(spec.product.placement_code)) {
+    errors.push('선택한 placement가 현재 room에 유효하지 않습니다.');
+  }
 
   return { errors, warnings };
 }
@@ -630,6 +726,7 @@ function setStatus(msg, type='ok'){ status.className = type; status.textContent 
 
 function generate(){
   let spec = getState();
+  console.debug('[generate] current-ui-state', spec);
   const result = validateSpec(spec);
   if (result.errors.length){
     renderGates({ ...result, lintHits: [] });
@@ -654,6 +751,7 @@ function generate(){
   negPrompt.textContent = prompt.neg;
   revPrompt.textContent = prompt.rev;
   localStorage.setItem('currentSpec', JSON.stringify(spec));
+  localStorage.setItem('lastPromptBundle', JSON.stringify({ spec, prompt, generatedAt: new Date().toISOString() }));
   setStatus('프롬프트 생성 완료.', 'ok');
 }
 
@@ -669,18 +767,24 @@ function loadPreset(){
   const raw = localStorage.getItem('preset_v1');
   if (!raw){ setStatus('저장된 preset이 없습니다.', 'warn'); return; }
   const s = JSON.parse(raw);
-  setSegmentValue('room', s.scene.room_code || s.scene.room);
+  room.value = s.scene.room_code || s.scene.room;
+  refreshPlacementOptions();
   setSegmentValue('time', s.scene.time_code || s.scene.time);
   setSegmentValue('mood', s.scene.mood_code || s.scene.mood);
   pitch.value=s.camera.pitch; yaw.value=String(s.camera.yaw);
   setSegmentValue('distance', s.camera.distance_code || s.camera.distance);
   setSegmentValue('lens', s.camera.lens_code || s.camera.lens);
-  setSegmentValue('scale', s.product.scale_code || s.product.scale);
-  setSegmentValue('placement', s.product.placement_code || s.product.placement);
+  const loadedLength = Number(s.product.length_cm);
+  const idx = LENGTH_BUCKETS.findIndex(b => b.value_cm === loadedLength);
+  lengthSlider.value = String(idx >= 0 ? idx : 1);
+  updateLengthLabel();
+  placement.dataset.prevValue = s.product.placement_code || s.product.placement;
+  refreshPlacementOptions();
   setSegmentValue('keepout', s.product.keep_out);
   setSegmentValue('density', s.props.density);
   setSegmentValue('masterRatio', s.output.master_ratio);
   d169.checked=s.output.derivatives.includes('16:9'); d11.checked=s.output.derivatives.includes('1:1'); d45.checked=s.output.derivatives.includes('4:5');
+  updateRatioPreview();
   syncAnglePadFromInputs();
   setStatus('Preset 불러오기 완료', 'ok');
 }
@@ -714,16 +818,19 @@ function resetForm(){
   localStorage.removeItem('currentSpec');
   specView.textContent=''; genPrompt.textContent=''; negPrompt.textContent=''; revPrompt.textContent='';
   gates.innerHTML=''; notes.value='';
-  setSegmentValue('room', 'living_room');
+  room.value = 'living_room';
   setSegmentValue('time', 'evening');
   setSegmentValue('mood', 'minimal_warm');
   setSegmentValue('distance', 'medium');
   setSegmentValue('lens', '35-50');
-  setSegmentValue('scale', 'onyx_class');
-  setSegmentValue('placement', 'side_table');
+  lengthSlider.value = '1';
+  updateLengthLabel();
+  placement.dataset.prevValue = 'side_table';
+  refreshPlacementOptions();
   setSegmentValue('keepout', 'medium');
   setSegmentValue('density', 'low');
   setSegmentValue('masterRatio', '3:2');
+  updateRatioPreview();
   d169.checked = true; d11.checked = true; d45.checked = true;
   pitch.value = 20;
   yaw.value = 30;
@@ -734,6 +841,9 @@ function resetForm(){
 initSegments();
 initAngleTools();
 initAnglePad();
+refreshPlacementOptions();
+updateLengthLabel();
+updateRatioPreview();
 
 const generateBtn = document.getElementById('generate');
 const savePresetBtn = document.getElementById('savePreset');
@@ -744,6 +854,12 @@ const exportLogBtn = document.getElementById('exportLog');
 const resetBtn = document.getElementById('reset');
 
 generateBtn.addEventListener('click', generate);
+room.addEventListener('change', refreshPlacementOptions);
+placement.addEventListener('change', ()=>{ placement.dataset.prevValue = placement.value; });
+lengthSlider.addEventListener('input', updateLengthLabel);
+masterRatio.addEventListener('change', updateRatioPreview);
+addRoomBtn.addEventListener('click', addCustomRoom);
+addPlacementBtn.addEventListener('click', addCustomPlacement);
 savePresetBtn.addEventListener('click', savePreset);
 loadPresetBtn.addEventListener('click', loadPreset);
 markPassBtn.addEventListener('click', ()=>logResult(true));
