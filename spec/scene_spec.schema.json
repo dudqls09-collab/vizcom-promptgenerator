@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vizcom.local/spec/scene_spec.schema.json",
+  "title": "Scene Spec v1.1",
+  "type": "object",
+  "required": ["scene", "camera", "product", "props", "output", "brand_lock"],
+  "properties": {
+    "scene": {
+      "type": "object",
+      "required": ["room", "time", "mood"],
+      "properties": {
+        "room": { "type": "string" },
+        "time": { "type": "string" },
+        "mood": { "type": "string" }
+      }
+    },
+    "camera": {
+      "type": "object",
+      "required": ["pitch", "yaw", "distance", "lens"],
+      "properties": {
+        "pitch": { "type": "number" },
+        "yaw": { "type": "number" },
+        "distance": { "type": "string" },
+        "lens": { "type": "string" }
+      }
+    },
+    "product": {
+      "type": "object",
+      "required": ["scale_code", "scale_desc", "placement_code", "placement_desc", "keep_out", "keepout_desc"],
+      "properties": {
+        "scale_code": { "type": "string" },
+        "scale_desc": { "type": "string" },
+        "placement_code": { "type": "string" },
+        "placement_desc": { "type": "string" },
+        "keep_out": { "type": "string" },
+        "keepout_desc": { "type": "string" }
+      }
+    },
+    "props": {
+      "type": "object",
+      "required": ["density", "avoid_near_product"],
+      "properties": {
+        "density": { "type": "string" },
+        "avoid_near_product": { "type": "boolean" }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["master_ratio", "derivatives"],
+      "properties": {
+        "master_ratio": { "type": "string" },
+        "derivatives": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "brand_lock": {
+      "type": "object",
+      "required": ["embrace", "avoid"],
+      "properties": {
+        "embrace": { "type": "string" },
+        "avoid": { "type": "string" }
+      }
+    }
+  }
+}

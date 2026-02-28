@@ -1,0 +1,15 @@
+scale_codes:
+  - portable
+  - onyx_class
+  - tower
+
+placements:
+  - side_table
+  - tv_console
+  - shelf
+  - floor_near_wall
+
+moods:
+  - minimal_warm
+  - modern_luxury
+  - cozy_family
