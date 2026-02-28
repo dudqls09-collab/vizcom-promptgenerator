@@ -3,377 +3,887 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Prompt Builder UI MVP v1.2</title>
+  <title>Prompt Builder UI MVP v1.1</title>
   <style>
-    :root { --bg:#0f1115; --panel:#171a21; --line:#2a2f3a; --text:#e9edf5; --muted:#a4adbd; --accent:#7aa2ff; --ok:#19c37d; --bad:#ff5d6c; }
-    * { box-sizing:border-box; font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    :root { --bg:#0f1115; --panel:#171a21; --line:#2a2f3a; --text:#e9edf5; --muted:#a4adbd; --accent:#7aa2ff; --ok:#19c37d; --warn:#ffb020; --bad:#ff5d6c; }
+    * { box-sizing:border-box; font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
     body { margin:0; background:var(--bg); color:var(--text); }
-    header { padding:14px 18px; border-bottom:1px solid var(--line); }
+    header { padding:14px 18px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
     h1 { margin:0; font-size:18px; }
-    .meta { color:var(--muted); font-size:12px; margin-top:4px; }
-    .wrap { display:grid; grid-template-columns: 420px 1fr 1fr; gap:12px; padding:12px; min-height: calc(100vh - 56px); }
-    .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; overflow:auto; }
+    .meta { color:var(--muted); font-size:12px; }
+
+    .wrap { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(360px,1fr); gap:12px; padding:12px; min-height: calc(100vh - 56px); }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; }
+    .panel h2 { margin:0 0 8px; font-size:14px; }
+    .left-head, .right-head { margin-bottom:10px; }
+    .left-head p, .right-head p { margin:4px 0 0; color:var(--muted); font-size:12px; }
+
+    .controls-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .sec { border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px; }
+    .controls-grid .sec { margin-bottom:0; }
+    .sec h3 { margin:0 0 8px; font-size:13px; color:#d8def0; }
+
     label { display:block; font-size:12px; color:var(--muted); margin:8px 0 6px; }
-    input, textarea, select, button { width:100%; background:#12151b; color:var(--text); border:1px solid #303747; border-radius:8px; padding:8px; font-size:13px; }
+    input, textarea, button { width:100%; background:#12151b; color:var(--text); border:1px solid #303747; border-radius:8px; padding:8px; font-size:13px; }
+    textarea { min-height:100px; resize:vertical; }
     button { cursor:pointer; }
-    .seg { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
-    .seg button.active { background:#1e2d4d; border-color:#5c7ecf; }
+    button:hover { border-color:var(--accent); }
+
+    .seg { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+    .seg button { padding:7px 6px; font-size:12px; }
+    .seg button.active { background:#1e2d4d; border-color:#5c7ecf; color:#dce8ff; }
+    .seg button:disabled { opacity:0.4; cursor:not-allowed; }
+    .seg.seg-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .seg.seg-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+
+    .inline { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .chips { display:flex; flex-wrap:wrap; gap:6px; }
     .chip { padding:4px 8px; border-radius:999px; font-size:11px; border:1px solid #39445d; background:#151c2b; }
-    .chip.ok { border-color:#1f5a43; color:#96f0c8; }
-    .chip.bad { border-color:#6d2b35; color:#ffadb7; }
-    .inline { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .hidden { display:none; }
-    .preview-frame { width:100%; aspect-ratio:16 / 10; border:1px solid #3a4357; border-radius:8px; background:#0f141f; display:flex; align-items:center; justify-content:center; margin-top:6px; }
-    .ratio-guide { border:2px dashed #7aa2ff; width:80%; transition:all .2s ease; }
-    .ratio-guide[data-ratio="3:2"] { aspect-ratio:3 / 2; }
-    .ratio-guide[data-ratio="1:1"] { aspect-ratio:1 / 1; }
-    .control-disabled { opacity:.45; }
-    .prompt-actions { display:flex; gap:8px; margin-bottom:8px; }
-    .prompt-actions button { flex:1; }
-    pre { white-space:pre-wrap; background:#11141a; border:1px solid #2b3342; border-radius:8px; padding:10px; font-size:12px; }
+    .chip.bad { border-color:#6d2b35; background:#2a1418; color:#ffadb7; }
+    .chip.ok { border-color:#1f5a43; background:#11251d; color:#96f0c8; }
+    .warn { color:var(--warn); font-size:12px; margin-top:6px; }
+    .err { color:var(--bad); font-size:12px; margin-top:6px; }
+    .ok { color:var(--ok); font-size:12px; margin-top:6px; }
+    pre { white-space:pre-wrap; word-break:break-word; background:#11141a; border:1px solid #2b3342; border-radius:8px; padding:10px; font-size:12px; margin:8px 0; }
+
+    .angle-tools { display:grid; gap:6px; }
+    .angle-pad-wrap { border:1px solid #33405a; border-radius:10px; background:#121826; padding:8px; }
+    .angle-pad { position:relative; width:100%; aspect-ratio:1/1; border:1px solid #3b4b6f; border-radius:8px; background:linear-gradient(to right, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%), linear-gradient(to bottom, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%), #0f1522; cursor:grab; touch-action:none; }
+    .angle-pad.dragging { cursor:grabbing; }
+    .angle-marker { position:absolute; width:14px; height:14px; border-radius:999px; border:2px solid #dce8ff; background:#7aa2ff; transform:translate(-50%, -50%); box-shadow:0 0 0 3px rgba(122,162,255,0.2); pointer-events:none; }
+    .angle-hint { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; margin-top:4px; }
+    .angle-row { display:grid; grid-template-columns:76px 1fr; gap:6px; align-items:center; }
+    .nudge { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+    .nudge button, .preset-angle button { padding:6px; font-size:12px; }
+    .preset-angle { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:6px; }
+
+    .custom-add { display:grid; grid-template-columns:1fr 84px; gap:6px; margin-top:6px; }
+    .preview-frame { width:100%; border:1px dashed #3b4b6f; border-radius:10px; background:#0f1522; display:grid; place-items:center; color:var(--muted); font-size:12px; }
+    .preview-frame .inner { width:84%; height:84%; border:1px solid #445680; border-radius:8px; display:grid; place-items:center; }
+    .btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+    .btns3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:8px; }
+
+    .right-col { display:grid; gap:12px; }
+
+    @media (max-width: 1200px) {
+      .wrap { grid-template-columns:1fr; }
+      .controls-grid { grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>Prompt Builder UI MVP v1.2</h1>
-    <div class="meta">UI output path: /ui · Staging-language prompt rules applied</div>
+    <h1>프롬프트 제조 UI MVP v1.1 (Compiler + Lexicon + Lint)</h1>
+    <div class="meta">Spec↔Surface 분리 · Reserved Token Lint Gate</div>
   </header>
+
   <div class="wrap">
-    <section class="panel">
-      <div class="sec">
-        <label>Goal Mode</label>
-        <div class="seg" id="modeSeg">
-          <button data-value="SCENE_ONLY" class="active" type="button">SCENE_ONLY</button>
-          <button data-value="PRODUCT_IN_SCENE" type="button">PRODUCT_IN_SCENE</button>
-        </div>
+    <section class="panel" id="controls">
+      <div class="left-head">
+        <h2>옵션 선택 / 조작부</h2>
+        <p>모든 핵심 옵션을 버튼으로 항상 노출하고, 클릭 1회로 변경되도록 구성했습니다.</p>
       </div>
-      <div class="sec">
-        <label>Output Settings</label>
-        <label>Master Ratio</label>
-        <div class="seg" id="ratioSeg">
-          <button data-value="1:1" type="button">1:1</button>
-          <button data-value="3:2" class="active" type="button">3:2</button>
+
+      <div class="controls-grid">
+        <div class="sec">
+          <h3>Scene</h3>
+          <label>Room</label>
+          <div class="seg seg-2" data-input="room" id="roomSeg">
+            <button type="button" data-value="living_room">living_room</button>
+            <button type="button" data-value="bedroom">bedroom</button>
+            <button type="button" data-value="study">study</button>
+            <button type="button" data-value="dining">dining</button>
+          </div>
+          <input type="hidden" id="room" value="living_room" />
+          <div class="custom-add">
+            <input id="customRoom" placeholder="직접 입력 room type" />
+            <button id="addRoom" type="button">적용</button>
+          </div>
+
+          <label>Time</label>
+          <div class="seg seg-2" data-input="time">
+            <button type="button" data-value="day">day</button>
+            <button type="button" data-value="evening">evening</button>
+            <button type="button" data-value="night">night</button>
+          </div>
+          <input type="hidden" id="time" value="evening" />
+
+          <label>Mood</label>
+          <div class="seg" data-input="mood">
+            <button type="button" data-value="minimal_warm">minimal_warm</button>
+            <button type="button" data-value="modern_luxury">modern_luxury</button>
+            <button type="button" data-value="cozy_family">cozy_family</button>
+          </div>
+          <input type="hidden" id="mood" value="minimal_warm" />
         </div>
-        <label>Ratio Preview (fixed viewport)</label>
-        <div class="preview-frame">
-          <div id="ratioGuide" class="ratio-guide" data-ratio="3:2"></div>
-        </div>
-      </div>
-      <div class="sec">
-        <label>Scene & Product</label>
-        <label>Room</label>
-        <select id="room"></select>
-        <div id="placementControls">
-          <label>Placement</label>
-          <select id="placement"></select>
-          <label>Placement Custom (현재 room에 추가)</label>
+
+        <div class="sec">
+          <h3>Camera (빠른 의도 입력)</h3>
+          <label>Angle Pad (드래그로 Pitch/Yaw 동시 제어 · 5도 스냅)</label>
+          <div class="angle-tools">
+            <div class="angle-pad-wrap">
+              <div id="anglePad" class="angle-pad" aria-label="camera-angle-pad" tabindex="0">
+                <div id="angleMarker" class="angle-marker"></div>
+              </div>
+              <div class="angle-hint"><span>Pitch: up (+)</span><span>Pitch: down (-)</span></div>
+              <div class="angle-hint"><span>Yaw: left (-)</span><span>Yaw: right (+)</span></div>
+            </div>
+            <div class="angle-row"><span>Pitch</span><input id="pitch" type="number" step="5" value="20" /></div>
+            <div class="nudge" data-angle-target="pitch">
+              <button type="button" data-delta="-10">-10</button><button type="button" data-delta="-5">-5</button><button type="button" data-delta="5">+5</button><button type="button" data-delta="10">+10</button>
+            </div>
+            <div class="angle-row"><span>Yaw</span><input id="yaw" type="number" step="5" value="30" /></div>
+            <div class="nudge" data-angle-target="yaw">
+              <button type="button" data-delta="-10">-10</button><button type="button" data-delta="-5">-5</button><button type="button" data-delta="5">+5</button><button type="button" data-delta="10">+10</button>
+            </div>
+          </div>
+          <label>Quick Angle Presets (Yaw 기준)</label>
+          <div class="preset-angle" data-preset-target="yaw">
+            <button type="button" data-value="-30">left 30</button><button type="button" data-value="-20">left 20</button><button type="button" data-value="-10">left 10</button><button type="button" data-value="10">right 10</button><button type="button" data-value="20">right 20</button><button type="button" data-value="30">right 30</button>
+          </div>
           <div class="inline">
-            <input id="customPlacement" placeholder="e.g. on a floating console" />
-            <button id="addPlacement" type="button">Add</button>
+            <div>
+              <label>Distance</label>
+              <div class="seg seg-2" data-input="distance"><button type="button" data-value="medium">medium</button><button type="button" data-value="wide">wide</button><button type="button" data-value="close">close</button></div>
+              <input type="hidden" id="distance" value="medium" />
+            </div>
+            <div>
+              <label>Lens</label>
+              <div class="seg seg-2" data-input="lens"><button type="button" data-value="35-50">35-50</button><button type="button" data-value="24-35">24-35</button><button type="button" data-value="50-70">50-70</button></div>
+              <input type="hidden" id="lens" value="35-50" />
+            </div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h3>Product</h3>
+          <label>제품 길이(cm)</label>
+          <input id="lengthSlider" type="range" min="0" max="3" step="1" value="1" />
+          <div id="lengthLabel" class="meta"></div>
+
+          <label>Placement (방/환경에 따라 활성/비활성)</label>
+          <div class="seg seg-2" id="placementSeg"></div>
+          <input type="hidden" id="placement" value="side_table" />
+          <div class="custom-add">
+            <input id="customPlacement" placeholder="직접 입력 placement" />
+            <button id="addPlacement" type="button">적용</button>
+          </div>
+
+          <label>Keep-out Zone</label>
+          <div class="seg" data-input="keepout"><button type="button" data-value="small">small</button><button type="button" data-value="medium">medium</button><button type="button" data-value="large">large</button></div>
+          <input type="hidden" id="keepout" value="medium" />
+        </div>
+
+        <div class="sec">
+          <h3>Output</h3>
+          <label>Prop Density</label>
+          <div class="seg" data-input="density"><button type="button" data-value="low">low</button><button type="button" data-value="medium">medium</button><button type="button" data-value="high">high</button></div>
+          <input type="hidden" id="density" value="low" />
+
+          <label>Master Ratio</label>
+          <div class="seg seg-2" data-input="masterRatio"><button type="button" data-value="3:2">3:2</button><button type="button" data-value="1:1">1:1</button></div>
+          <input type="hidden" id="masterRatio" value="3:2" />
+
+          <label>Ratio Preview</label>
+          <div id="ratioPreview" class="preview-frame"><div class="inner">master ratio preview</div></div>
+
+          <label>Derivatives (클릭 즉시 토글)</label>
+          <div class="seg seg-3" id="derivativeSeg">
+            <button type="button" data-ratio="16:9" class="active">16:9</button>
+            <button type="button" data-ratio="1:1" class="active">1:1</button>
+            <button type="button" data-ratio="4:5" class="active">4:5</button>
           </div>
         </div>
       </div>
+
       <div class="sec">
-        <label>Scene DNA Preset</label>
-        <select id="sceneDna"></select>
-        <label>Prop Density</label>
-        <select id="propDensity"><option>low</option><option selected>medium</option><option>high</option></select>
-        <label>Time of Day</label>
-        <select id="timeOfDay"><option>daytime</option><option>golden hour</option><option>evening</option></select>
-        <label>Mood</label>
-        <input id="mood" value="calm premium lifestyle" />
+        <div class="btns3"><button id="generate" type="button">Generate</button><button id="savePreset" type="button">Save Preset</button><button id="loadPreset" type="button">Load Preset</button></div>
+        <div class="btns"><button id="markPass" type="button">Mark Pass</button><button id="markFail" type="button">Mark Fail</button></div>
+        <div class="btns"><button id="exportLog" type="button">Export Log (MD)</button><button id="reset" type="button">Reset</button></div>
+        <div id="status"></div>
       </div>
-      <div class="sec">
-        <label>Camera Pitch (°)</label><input id="pitch" type="number" value="20" />
-        <label>Camera Yaw (°)</label><input id="yaw" type="number" value="30" />
-        <label>Distance</label><select id="distance"><option>near-medium distance</option><option>wide distance</option><option>close distance</option></select>
-        <label>Lens mm Equiv</label><input id="lens" type="number" value="35" />
-      </div>
-      <div class="sec">
-        <label>Anchor Zone</label><input id="anchor" value="leave intentional negative space on center-right" />
-        <label>Architecture/Layout cue</label><input id="layout" value="clean contemporary interior layout with readable circulation" />
-      </div>
-      <div id="productSec" class="sec hidden">
-        <label>Scale Slider (10cm ~ 50cm+)</label>
-        <input id="scaleSlider" type="range" min="0" max="3" step="1" value="1" />
-        <div id="scaleText"></div>
-        <label>Keep-out Clause</label><input id="keepout" value="clear perimeter around hero subject" />
-        <label>Scene Intent</label><input id="brandMoment" value="composition prepared for later object compositing" />
-      </div>
-      <div id="status"></div>
     </section>
 
-    <section class="panel">
-      <h3>Gate Status</h3>
-      <div class="chips" id="gates"></div>
-      <h3>Current Spec</h3>
-      <pre id="specView"></pre>
-    </section>
+    <section class="right-col">
+      <section class="panel">
+        <div class="right-head">
+          <h2>프롬프트 출력창</h2>
+          <p>오른쪽 영역은 생성 결과 확인 전용입니다.</p>
+        </div>
+        <label>Vizcom 생성 프롬프트</label>
+        <pre id="genPrompt"></pre>
+        <button onclick="copyText('genPrompt')">Copy Prompt</button>
+        <label>Negative Prompt</label>
+        <pre id="negPrompt"></pre>
+        <button onclick="copyText('negPrompt')">Copy Negative</button>
+        <label>Revision Prompt (각도/배치/제품강조)</label>
+        <pre id="revPrompt"></pre>
+        <button onclick="copyText('revPrompt')">Copy Revision</button>
+      </section>
 
-    <section class="panel">
-      <h3>Current Surface Prompt</h3>
-      <div class="prompt-actions">
-        <button id="generate" type="button">Generate Prompt</button>
-      </div>
-      <pre id="promptView"></pre>
+      <section class="panel">
+        <h2>Scene Spec / Validation</h2>
+        <div class="chips" id="gates"></div>
+        <pre id="specView"></pre>
+        <h2>세션 메모</h2>
+        <textarea id="notes" placeholder="왜 pass/fail 인지, 다음 수정 포인트를 짧게 기록"></textarea>
+      </section>
     </section>
   </div>
 
 <script>
-const state = { mode: 'SCENE_ONLY', masterRatio: '3:2', customPlacements: {}, lexicon: null };
+const brandEmbrace = [
+  "harmonious interplay of sound, light, and design",
+  "evocative in-situ moment in curated home interior",
+  "warm natural materials (wood, fabric, stone), tasteful composition"
+];
+const brandAvoid = [
+  "posed portrait", "camera eye contact", "overly busy decor", "sterile mono-material look",
+  "harsh unrealistic reflections", "front-facing flat product shot"
+];
 
-function stripQuote(v){ return (v || '').replace(/^"|"$/g, '').trim(); }
+const LENGTH_BUCKETS = [
+  { id: 'length_10', value_cm: 10, label: '약 10cm', surface: 'compact tabletop product, about 10cm length' },
+  { id: 'length_20', value_cm: 20, label: '약 20cm', surface: 'small tabletop product, about 20cm length' },
+  { id: 'length_35', value_cm: 35, label: '약 35cm', surface: 'mid-size product, about 35cm length' },
+  { id: 'length_50_plus', value_cm: 50, label: '50cm 이상', surface: 'large product, 50cm or longer footprint' }
+];
 
-function parseRoomPlacementYml(text){
-  const out = {};
-  let room = null;
-  let item = null;
-  text.split('\n').forEach((line)=>{
-    if (/^\s{2}[a-z_]+:$/.test(line)) {
-      room = line.trim().slice(0, -1);
-      out[room] = [];
-      item = null;
-      return;
-    }
-    if (/^\s{4}- id: /.test(line)) {
-      item = { id: line.split(':').slice(1).join(':').trim() };
-      out[room].push(item);
-      return;
-    }
-    if (/^\s{6}category: /.test(line) && item) item.category = line.split(':').slice(1).join(':').trim();
-    if (/^\s{6}prompt: /.test(line) && item) item.prompt = stripQuote(line.split(':').slice(1).join(':'));
+const ROOM_PLACEMENT_RULES = {
+  living_room: ['side_table', 'tv_console', 'shelf', 'floor_near_wall'],
+  bedroom: ['side_table', 'shelf'],
+  study: ['side_table', 'shelf'],
+  dining: ['shelf', 'floor_near_wall']
+};
+
+const CUSTOM_VALUES = {
+  rooms: new Set(),
+  placementsByRoom: {}
+};
+
+const BASE_PLACEMENT_CODES = ['side_table', 'tv_console', 'shelf', 'floor_near_wall'];
+
+const SURFACE_LEXICON = {
+  room_surface: {
+    living_room: 'living room',
+    bedroom: 'bedroom',
+    study: 'study room',
+    dining: 'dining room'
+  },
+  time_surface: {
+    day: 'daytime',
+    evening: 'evening',
+    night: 'night'
+  },
+  mood_surface: {
+    minimal_warm: 'minimal warm',
+    modern_luxury: 'modern luxury',
+    cozy_family: 'cozy family'
+  },
+  distance_surface: {
+    close: 'close',
+    medium: 'medium',
+    wide: 'wide'
+  },
+  lens_surface: {
+    '24-35': '24-35',
+    '35-50': '35-50',
+    '50-70': '50-70'
+  },
+  placement_surface: {
+    side_table: "on a side table",
+    tv_console: "on a TV console",
+    shelf: "on a shelf",
+    floor_near_wall: "on the floor near a wall"
+  },
+  keepout_surface: {
+    small: "small keep-out zone",
+    medium: "medium keep-out zone with clear negative space around the product",
+    large: "large keep-out zone with generous negative space around the product"
+  }
+};
+
+const RESERVED_TOKENS = [
+  "brand lock",
+  "http://",
+  "https://"
+];
+
+const RESERVED_PATTERNS = [
+  /\b\w+_class\b/gi,
+  /\bSKU\b/gi,
+  /\bmodel\s*no\.?\b/gi
+];
+
+const ENABLE_STRICT_NEG = false;
+
+let logs = [];
+
+const room = document.getElementById('room');
+const time = document.getElementById('time');
+const mood = document.getElementById('mood');
+const pitch = document.getElementById('pitch');
+const yaw = document.getElementById('yaw');
+const distance = document.getElementById('distance');
+const lens = document.getElementById('lens');
+const lengthSlider = document.getElementById('lengthSlider');
+const lengthLabel = document.getElementById('lengthLabel');
+const placement = document.getElementById('placement');
+const keepout = document.getElementById('keepout');
+const density = document.getElementById('density');
+const masterRatio = document.getElementById('masterRatio');
+const derivativeSeg = document.getElementById('derivativeSeg');
+const placementSeg = document.getElementById('placementSeg');
+const gates = document.getElementById('gates');
+const status = document.getElementById('status');
+const notes = document.getElementById('notes');
+const specView = document.getElementById('specView');
+const genPrompt = document.getElementById('genPrompt');
+const negPrompt = document.getElementById('negPrompt');
+const revPrompt = document.getElementById('revPrompt');
+const anglePad = document.getElementById('anglePad');
+const angleMarker = document.getElementById('angleMarker');
+const ratioPreview = document.getElementById('ratioPreview');
+const customRoomInput = document.getElementById('customRoom');
+const addRoomBtn = document.getElementById('addRoom');
+const customPlacementInput = document.getElementById('customPlacement');
+const addPlacementBtn = document.getElementById('addPlacement');
+
+function setSegmentValue(inputId, value){
+  const input = document.getElementById(inputId);
+  input.value = value;
+  document.querySelectorAll(`.seg[data-input="${inputId}"] button`).forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.value === value);
   });
-  return out;
 }
 
-function parseSceneDnaYml(text){
-  const out = {};
-  let preset = null;
-  text.split('\n').forEach((line)=>{
-    if (/^\s{2}[a-z_]+:$/.test(line)) { preset = line.trim().slice(0, -1); out[preset] = {}; return; }
-    if (/^\s{4}[a-z_]+: /.test(line) && preset) {
-      const idx = line.indexOf(':');
-      const key = line.trim().slice(0, line.trim().indexOf(':'));
-      const val = stripQuote(line.slice(idx + 1));
-      out[preset][key] = val;
-    }
+function initSegments(){
+  document.querySelectorAll('.seg[data-input]').forEach(group=>{
+    const inputId = group.dataset.input;
+    const input = document.getElementById(inputId);
+    group.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=> {
+        setSegmentValue(inputId, btn.dataset.value);
+        if (inputId === 'room') refreshPlacementOptions();
+        if (inputId === 'masterRatio') updateRatioPreview();
+      });
+    });
+    setSegmentValue(inputId, input.value);
   });
-  return out;
 }
 
-function parseScaleBucketsYml(text){
-  const out = [];
-  let item = null;
-  text.split('\n').forEach((line)=>{
-    if (/^\s{2}- id: /.test(line)) { item = { id: line.split(':').slice(1).join(':').trim() }; out.push(item); return; }
-    if (!item) return;
-    if (/^\s{4}min_cm: /.test(line)) item.min_cm = Number(line.split(':').slice(1).join(':').trim());
-    if (/^\s{4}max_cm: /.test(line)) { const v = line.split(':').slice(1).join(':').trim(); item.max_cm = v === 'null' ? null : Number(v); }
-    if (/^\s{4}surface_prompt: /.test(line)) item.surface_prompt = stripQuote(line.split(':').slice(1).join(':'));
+function updateRatioPreview(){
+  ratioPreview.style.aspectRatio = masterRatio.value.replace(':', '/');
+}
+
+function getSelectedDerivatives(){
+  return Array.from(derivativeSeg.querySelectorAll('button.active')).map(btn => btn.dataset.ratio);
+}
+
+function initDerivativeToggles(){
+  derivativeSeg.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      btn.classList.toggle('active');
+      if (!getSelectedDerivatives().length) {
+        btn.classList.add('active');
+      }
+    });
   });
-  return out;
 }
 
-async function loadLexicons(){
-  const [roomText, scaleText, dnaText] = await Promise.all([
-    fetch('./lexicon/room_placement_map.yml').then(r=>r.text()),
-    fetch('./lexicon/scale_buckets.yml').then(r=>r.text()),
-    fetch('./lexicon/scene_dna.yml').then(r=>r.text())
-  ]);
-  state.lexicon = {
-    roomPlacement: parseRoomPlacementYml(roomText).room_placement_map || parseRoomPlacementYml(roomText),
-    scaleBuckets: parseScaleBucketsYml(scaleText),
-    sceneDna: parseSceneDnaYml(dnaText).scene_dna || parseSceneDnaYml(dnaText)
-  };
+function getLengthBucket(){
+  return LENGTH_BUCKETS[Number(lengthSlider.value)] || LENGTH_BUCKETS[0];
 }
 
-function populateBasics(){
-  const roomSel = document.getElementById('room');
-  roomSel.innerHTML = Object.keys(state.lexicon.roomPlacement).map(r=>`<option value="${r}">${r}</option>`).join('');
-  const sceneDnaSel = document.getElementById('sceneDna');
-  sceneDnaSel.innerHTML = Object.keys(state.lexicon.sceneDna).map(k=>`<option value="${k}">${k}</option>`).join('');
-  updatePlacementOptions();
-  updateScaleText();
+function updateLengthLabel(){
+  const bucket = getLengthBucket();
+  lengthLabel.textContent = `${bucket.label} · ${bucket.surface}`;
 }
 
-function updatePlacementOptions(){
-  const room = document.getElementById('room').value;
-  const select = document.getElementById('placement');
-  const base = (state.lexicon.roomPlacement[room] || []).map(x=>x.prompt);
-  const custom = state.customPlacements[room] || [];
-  const options = [...new Set([...base, ...custom])];
-  select.innerHTML = options.map(p=>`<option value="${p}">${p}</option>`).join('');
+function allowedPlacementCodesForRoom(roomCode){
+  return ROOM_PLACEMENT_RULES[roomCode] || BASE_PLACEMENT_CODES;
+}
+
+function getPlacementOptionsForRoom(roomCode){
+  const base = allowedPlacementCodesForRoom(roomCode).map(code => ({
+    code,
+    desc: SURFACE_LEXICON.placement_surface[code] || code
+  }));
+  const custom = (CUSTOM_VALUES.placementsByRoom[roomCode] || []).map(value => ({ code: value, desc: SURFACE_LEXICON.placement_surface[value] || value }));
+  return [...base, ...custom];
+}
+
+function setPlacementValue(value){
+  placement.value = value;
+  placementSeg.querySelectorAll('button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === value);
+  });
+}
+
+function refreshPlacementOptions(){
+  const roomCode = room.value;
+  const options = getPlacementOptionsForRoom(roomCode);
+  const allowed = new Set(allowedPlacementCodesForRoom(roomCode));
+
+  placementSeg.innerHTML = options.map(opt => {
+    const disabled = !allowed.has(opt.code) && !String(opt.code).startsWith('custom:');
+    return `<button type="button" data-value="${opt.code}" ${disabled ? 'disabled' : ''}>${opt.desc}</button>`;
+  }).join('');
+
+  placementSeg.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      if (btn.disabled) return;
+      setPlacementValue(btn.dataset.value);
+    });
+  });
+
+  const prevValue = placement.dataset.prevValue || placement.value;
+  const activeOptions = options.filter(opt => {
+    const isCustom = String(opt.code).startsWith('custom:');
+    return allowed.has(opt.code) || isCustom;
+  });
+  const isValid = activeOptions.some(opt => opt.code === prevValue);
+  if (isValid) {
+    setPlacementValue(prevValue);
+  } else if (activeOptions.length) {
+    setPlacementValue(activeOptions[0].code);
+    setStatus('Room 변경으로 Placement가 유효값으로 자동 조정되었습니다.', 'warn');
+  }
+  placement.dataset.prevValue = placement.value;
+}
+
+function addCustomRoom(){
+  const value = customRoomInput.value.trim();
+  if (!value) return;
+  if (!CUSTOM_VALUES.rooms.has(value)) {
+    CUSTOM_VALUES.rooms.add(value);
+    const roomSeg = document.getElementById('roomSeg');
+    roomSeg.insertAdjacentHTML('beforeend', `<button type=\"button\" data-value=\"${value}\">${value}</button>`);
+    const btn = roomSeg.querySelector(`button[data-value=\"${value}\"]`);
+    btn.addEventListener('click', ()=> {
+      setSegmentValue('room', value);
+      refreshPlacementOptions();
+    });
+  }
+  setSegmentValue('room', value);
+  customRoomInput.value = '';
+  refreshPlacementOptions();
 }
 
 function addCustomPlacement(){
-  const room = document.getElementById('room').value;
-  const v = document.getElementById('customPlacement').value.trim();
-  if (!v) return;
-  if (!state.customPlacements[room]) state.customPlacements[room] = [];
-  state.customPlacements[room].push(v);
-  document.getElementById('customPlacement').value = '';
-  updatePlacementOptions();
-  document.getElementById('placement').value = v;
+  const value = customPlacementInput.value.trim();
+  if (!value) return;
+  const roomCode = room.value;
+  if (!CUSTOM_VALUES.placementsByRoom[roomCode]) CUSTOM_VALUES.placementsByRoom[roomCode] = [];
+  const code = `custom:${value}`;
+  if (!CUSTOM_VALUES.placementsByRoom[roomCode].includes(code)) {
+    CUSTOM_VALUES.placementsByRoom[roomCode].push(code);
+    SURFACE_LEXICON.placement_surface[code] = value;
+  }
+  customPlacementInput.value = '';
+  refreshPlacementOptions();
+  setPlacementValue(code);
+  placement.dataset.prevValue = code;
 }
 
-function updateScaleText(){
-  const idx = Number(document.getElementById('scaleSlider').value);
-  const bucket = state.lexicon.scaleBuckets[idx];
-  document.getElementById('scaleText').textContent = bucket ? bucket.surface_prompt : '';
+function updateAngle(id, nextValue){
+  document.getElementById(id).value = Number(nextValue);
 }
 
-function setSegment(groupId, value){
-  document.querySelectorAll(`#${groupId} button`).forEach(btn=>btn.classList.toggle('active', btn.dataset.value === value));
+function clamp(num, min, max){
+  return Math.min(max, Math.max(min, num));
 }
 
-function getSpec(){
-  const scene_dna_preset = document.getElementById('sceneDna').value;
-  const dna = state.lexicon.sceneDna[scene_dna_preset];
-  const spec = {
-    mode: state.mode,
+function syncAnglePadFromInputs(){
+  const yawValue = clamp(Number(yaw.value) || 0, -80, 80);
+  const pitchValue = clamp(Number(pitch.value) || 0, -60, 60);
+  yaw.value = yawValue;
+  pitch.value = pitchValue;
+
+  const xRatio = (yawValue + 80) / 160;
+  const yRatio = (60 - pitchValue) / 120;
+  angleMarker.style.left = `${xRatio * 100}%`;
+  angleMarker.style.top = `${yRatio * 100}%`;
+}
+
+function setAngleFromPadPointer(clientX, clientY){
+  const rect = anglePad.getBoundingClientRect();
+  const x = clamp(clientX - rect.left, 0, rect.width);
+  const y = clamp(clientY - rect.top, 0, rect.height);
+
+  const yawRaw = (x / rect.width) * 160 - 80;
+  const pitchRaw = 60 - (y / rect.height) * 120;
+
+  const yawSnap = Math.round(yawRaw / 5) * 5;
+  const pitchSnap = Math.round(pitchRaw / 5) * 5;
+
+  yaw.value = clamp(yawSnap, -80, 80);
+  pitch.value = clamp(pitchSnap, -60, 60);
+  syncAnglePadFromInputs();
+}
+
+function initAnglePad(){
+  let dragging = false;
+
+  anglePad.addEventListener('pointerdown', (event)=>{
+    dragging = true;
+    anglePad.classList.add('dragging');
+    anglePad.setPointerCapture(event.pointerId);
+    setAngleFromPadPointer(event.clientX, event.clientY);
+  });
+
+  anglePad.addEventListener('pointermove', (event)=>{
+    if (!dragging) return;
+    setAngleFromPadPointer(event.clientX, event.clientY);
+  });
+
+  anglePad.addEventListener('pointerup', (event)=>{
+    dragging = false;
+    anglePad.classList.remove('dragging');
+    anglePad.releasePointerCapture(event.pointerId);
+  });
+
+  anglePad.addEventListener('pointercancel', ()=>{
+    dragging = false;
+    anglePad.classList.remove('dragging');
+  });
+
+  pitch.addEventListener('input', syncAnglePadFromInputs);
+  yaw.addEventListener('input', syncAnglePadFromInputs);
+
+  anglePad.addEventListener('keydown', (event)=>{
+    const keyDelta = { ArrowLeft: [-5, 0], ArrowRight: [5, 0], ArrowUp: [0, 5], ArrowDown: [0, -5] }[event.key];
+    if (!keyDelta) return;
+    event.preventDefault();
+    yaw.value = Number(yaw.value || 0) + keyDelta[0];
+    pitch.value = Number(pitch.value || 0) + keyDelta[1];
+    syncAnglePadFromInputs();
+  });
+
+  syncAnglePadFromInputs();
+}
+
+function initAngleTools(){
+  document.querySelectorAll('.nudge').forEach(group=>{
+    const target = group.dataset.angleTarget;
+    group.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const current = Number(document.getElementById(target).value || 0);
+        updateAngle(target, current + Number(btn.dataset.delta));
+      });
+    });
+  });
+
+  document.querySelectorAll('.preset-angle[data-preset-target]').forEach(group=>{
+    const target = group.dataset.presetTarget;
+    group.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=> updateAngle(target, Number(btn.dataset.value)));
+    });
+  });
+}
+
+function getState(){
+  const derivatives = getSelectedDerivatives();
+
+  const lengthBucket = getLengthBucket();
+  const placementCode = placement.value;
+  const keepoutCode = keepout.value;
+
+  return {
     scene: {
-      room_type: document.getElementById('room').value,
-      time_of_day: document.getElementById('timeOfDay').value,
-      mood: document.getElementById('mood').value,
-      scene_dna_preset
+      room_code: room.value,
+      room_desc: SURFACE_LEXICON.room_surface[room.value] || room.value,
+      time_code: time.value,
+      time_desc: SURFACE_LEXICON.time_surface[time.value] || time.value,
+      mood_code: mood.value,
+      mood_desc: SURFACE_LEXICON.mood_surface[mood.value] || mood.value
     },
     camera: {
-      pitch: Number(document.getElementById('pitch').value),
-      yaw: Number(document.getElementById('yaw').value),
-      distance: document.getElementById('distance').value,
-      lens_mm_equiv: Number(document.getElementById('lens').value)
+      pitch: Number(pitch.value),
+      yaw: Number(yaw.value),
+      distance_code: distance.value,
+      distance_desc: SURFACE_LEXICON.distance_surface[distance.value] || distance.value,
+      lens_code: lens.value,
+      lens_desc: SURFACE_LEXICON.lens_surface[lens.value] || lens.value
     },
-    composition: {
-      decor_density: document.getElementById('propDensity').value,
-      anchor_zone: document.getElementById('anchor').value,
-      crop_safe: 'master ratio only'
+    product: {
+      length_bucket: lengthBucket.id,
+      length_cm: lengthBucket.value_cm,
+      length_desc: lengthBucket.label,
+      scale_desc: lengthBucket.surface,
+      placement_code: placementCode,
+      placement_desc: SURFACE_LEXICON.placement_surface[placementCode] || placementCode,
+      keep_out: keepoutCode,
+      keepout_desc: SURFACE_LEXICON.keepout_surface[keepoutCode] || "clear keep-out zone around the product"
     },
-    output: { master_ratio: state.masterRatio },
-    scene_dna: dna,
-    architecture_layout: document.getElementById('layout').value
+    props: { density: density.value, avoid_near_product: true },
+    output: { master_ratio: masterRatio.value, derivatives },
+    brand_lock: { embrace: "required", avoid: "required" }
   };
-  if (state.mode === 'PRODUCT_IN_SCENE') {
-    const idx = Number(document.getElementById('scaleSlider').value);
-    spec.product = {
-      placement: document.getElementById('placement').value,
-      scale_bucket_cm: state.lexicon.scaleBuckets[idx].id,
-      scale_surface: state.lexicon.scaleBuckets[idx].surface_prompt,
-      keepout_clause: document.getElementById('keepout').value,
-      brand_moment_sentence: document.getElementById('brandMoment').value
-    };
+}
+
+function validateSpec(spec){
+  const errors = [];
+  const warnings = [];
+
+  if (!Number.isFinite(spec.camera.pitch) || !Number.isFinite(spec.camera.yaw)) errors.push("Pitch/Yaw는 숫자여야 합니다.");
+  if (spec.camera.pitch % 5 !== 0 || spec.camera.yaw % 5 !== 0) warnings.push("카메라 각도는 5도 단위를 권장합니다.");
+  if (Math.abs(spec.camera.pitch) > 60 || Math.abs(spec.camera.yaw) > 80) warnings.push("극단 각도는 장면 왜곡 위험이 있어요.");
+  if (spec.camera.distance_code !== "medium") warnings.push("권장 distance는 medium");
+  if (spec.props.density === "high" && spec.product.keep_out === "large") warnings.push("prop density high + keep-out large 충돌 가능");
+  if (spec.output.derivatives.length === 0) errors.push("At least one derivative ratio required");
+  if (!spec.product.scale_desc) errors.push("length bucket에 대응하는 scale_desc가 없습니다.");
+  if (!spec.product.placement_desc) errors.push("placement_code에 대응하는 placement_desc가 없습니다.");
+  if (!spec.product.keepout_desc) errors.push("keep_out에 대응하는 keepout_desc가 없습니다.");
+  if (!spec.scene.room_desc || !spec.scene.time_desc || !spec.scene.mood_desc) errors.push("scene code에 대응하는 surface desc가 없습니다.");
+  if (!spec.camera.distance_desc || !spec.camera.lens_desc) errors.push("camera code에 대응하는 surface desc가 없습니다.");
+  if (spec.output.master_ratio !== '1:1' && spec.output.master_ratio !== '3:2') errors.push("Master ratio는 1:1 또는 3:2만 허용됩니다.");
+
+  const validPlacements = getPlacementOptionsForRoom(spec.scene.room_code).map(opt => opt.code);
+  if (!validPlacements.includes(spec.product.placement_code)) {
+    errors.push('선택한 placement가 현재 room에 유효하지 않습니다.');
   }
+
+  return { errors, warnings };
+}
+
+function injectBrandGuard(spec){
+  spec.brand_guard = { embrace: brandEmbrace, avoid: brandAvoid };
   return spec;
 }
 
+function composePrompt(spec){
+  const yawDir = spec.camera.yaw >= 0 ? `right ${Math.abs(spec.camera.yaw)}°` : `left ${Math.abs(spec.camera.yaw)}°`;
+  const derivatives = spec.output.derivatives.join(', ');
+  const gen = [
+    `${spec.scene.mood_desc} ${spec.scene.room_desc} interior`,
+    'in-situ lifestyle scene',
+    `${spec.scene.time_desc} lighting`,
+    `${spec.product.scale_desc}`,
+    `${spec.product.placement_desc}`,
+    `${spec.product.keepout_desc}`,
+    'three-quarter view',
+    `pitch ${spec.camera.pitch}°`,
+    `yaw ${yawDir}`,
+    `${spec.camera.distance_desc} distance`,
+    `${spec.camera.lens_desc}mm perspective`,
+    'warm natural materials wood fabric stone',
+    'tasteful composition',
+    `crop-safe master ${spec.output.master_ratio} for ${derivatives}`,
+    `brand DNA: ${spec.brand_guard.embrace.join('; ')}`
+  ].join(', ');
 
-function sanitizeProductKeywords(text){
-  return (text || '')
-    .replace(/\bproducts\b/gi, 'subjects')
-    .replace(/\bproduct\b/gi, 'subject')
-    .replace(/제품/g, '대상체');
-}
-
-function compilePrompt(spec){
-  const yawDir = spec.camera.yaw >= 0 ? 'right' : 'left';
-  const yawAbs = Math.abs(spec.camera.yaw);
-  const core = [
-    `${spec.scene.room_type} interior`,
-    `${spec.scene.time_of_day} light`,
-    spec.scene.mood,
-    spec.architecture_layout,
-    `scene palette: ${spec.scene_dna.palette}`,
-    `scene materials: ${spec.scene_dna.materials}`,
-    `scene lighting: ${spec.scene_dna.lighting}`,
-    `scene tone: ${spec.scene_dna.grading}`,
-    `decor: ${spec.composition.decor_density}`,
-    `photography: ${spec.scene_dna.photography_vibe}`,
-    `anchor zone: ${spec.composition.anchor_zone}`,
-    `camera: three-quarter interior viewpoint, pitch ${spec.camera.pitch}°, yaw ${yawDir} ${yawAbs}°, ${spec.camera.distance}, ${spec.camera.lens_mm_equiv}mm`,
-    `framing: master ${spec.output.master_ratio}`
+  const negParts = [
+    'watermark',
+    'signature',
+    'text overlay',
+    'gibberish text',
+    'distorted furniture'
   ];
-  if (spec.mode === 'PRODUCT_IN_SCENE') {
-    core.push(`staging surface: ${sanitizeProductKeywords(spec.product.placement)}`);
-    core.push(`clearance: ${sanitizeProductKeywords(spec.product.keepout_clause)}`);
-    core.push(`support scale: ${sanitizeProductKeywords(spec.product.scale_surface)}`);
-    core.push(`scene intent: ${sanitizeProductKeywords(spec.product.brand_moment_sentence)}`);
+
+  if (ENABLE_STRICT_NEG) {
+    negParts.push('duplicate product', 'multiple speakers', 'clutter near product');
   }
-  const compiled = core.join(', ');
-  return spec.mode === 'PRODUCT_IN_SCENE' ? sanitizeProductKeywords(compiled) : compiled;
+
+  const neg = negParts.join(', ');
+
+  const rev = [
+    `Revision A (angle): keep same scene, adjust camera in 5-degree steps near pitch ${spec.camera.pitch} / yaw ${spec.camera.yaw}.`,
+    'Revision B (props): reduce foreground props near product and clear keep-out zone.',
+    'Revision C (presence): increase product visibility with subtle contrast and light focus without breaking natural look.'
+  ].join(' ');
+
+  return { gen, neg, rev };
 }
 
-function runGates(spec, prompt){
-  const roomAllowlist = (state.lexicon.roomPlacement[spec.scene.room_type] || []).map(x=>x.prompt);
-  const custom = state.customPlacements[spec.scene.room_type] || [];
-  const allPlacements = [...roomAllowlist, ...custom];
-  const dnaSlotsPresent = ['scene palette:', 'scene materials:', 'scene lighting:', 'scene tone:', 'decor:', 'photography:'].every(x=>prompt.includes(x));
-  return [
-    { ok: ['1:1', '3:2'].includes(spec.output.master_ratio), msg: 'Gate master_ratio ∈ {1:1,3:2}' },
-    { ok: spec.mode === 'SCENE_ONLY' || allPlacements.includes(spec.product.placement), msg: 'Gate placement allowlist/custom room' },
-    { ok: true, msg: 'Gate generate recompiles from current Spec' },
-    { ok: spec.mode !== 'SCENE_ONLY' || !prompt.includes('staging surface:'), msg: 'Gate SCENE_ONLY excludes staging slots' },
-    { ok: spec.mode !== 'PRODUCT_IN_SCENE' || (prompt.includes('staging surface:') && prompt.includes('clearance:') && prompt.includes('support scale:')), msg: 'Gate PRODUCT_IN_SCENE includes staging slots' },
-    { ok: spec.mode !== 'PRODUCT_IN_SCENE' || !/\bproduct\b/i.test(prompt), msg: 'Gate PRODUCT_IN_SCENE avoids direct product keyword' },
-    { ok: dnaSlotsPresent, msg: 'Gate Scene DNA 6-slot bundle present' }
-  ];
-}
+function lintSurface(text){
+  const hits = [];
+  const lower = text.toLowerCase();
 
-function renderGates(results){
-  const el = document.getElementById('gates');
-  el.innerHTML = '';
-  results.forEach(g => {
-    const d = document.createElement('div');
-    d.className = `chip ${g.ok ? 'ok' : 'bad'}`;
-    d.textContent = `${g.ok ? 'PASS' : 'FAIL'} · ${g.msg}`;
-    el.appendChild(d);
+  RESERVED_TOKENS.forEach((token)=>{
+    if (lower.includes(token.toLowerCase())) hits.push(`token:${token}`);
   });
+
+  RESERVED_PATTERNS.forEach((pattern)=>{
+    const matcher = new RegExp(pattern.source, pattern.flags);
+    if (matcher.test(text)) hits.push(`pattern:${pattern}`);
+  });
+
+  return { ok: hits.length === 0, hits };
 }
+
+function renderGates({errors, warnings, lintHits = []}){
+  gates.innerHTML = '';
+  if (errors.length === 0) addChip('Validation Pass', 'ok');
+  errors.forEach(e => addChip(e, 'bad'));
+  warnings.forEach(w => addChip(w, 'warn'));
+
+  if (lintHits.length === 0) {
+    addChip('Lint Gate Pass', 'ok');
+  } else {
+    lintHits.forEach(hit => addChip(`Lint Fail: ${hit}`, 'bad'));
+  }
+}
+
+function addChip(text, type){
+  const div = document.createElement('div');
+  div.className = `chip ${type==='ok'?'ok': type==='bad'?'bad':''}`;
+  div.textContent = text;
+  gates.appendChild(div);
+}
+
+function setStatus(msg, type='ok'){ status.className = type; status.textContent = msg; }
 
 function generate(){
-  const spec = getSpec();
-  const prompt = compilePrompt(spec);
-  renderGates(runGates(spec, prompt));
-  document.getElementById('specView').textContent = JSON.stringify(spec, null, 2);
-  document.getElementById('promptView').textContent = prompt;
-  document.getElementById('status').textContent = 'Generated from latest Spec.';
+  let spec = getState();
+  console.debug('[generate] current-ui-state', spec);
+  const result = validateSpec(spec);
+  if (result.errors.length){
+    renderGates({ ...result, lintHits: [] });
+    setStatus('생성 차단: Validation 오류를 먼저 수정하세요.', 'err');
+    return;
+  }
+
+  spec = injectBrandGuard(spec);
+  const prompt = composePrompt(spec);
+
+  const lintInputs = [prompt.gen, prompt.neg, prompt.rev];
+  const lintHits = lintInputs.flatMap((text)=> lintSurface(text).hits);
+  renderGates({ ...result, lintHits });
+
+  if (lintHits.length){
+    setStatus(`생성 차단: reserved token 누출(${lintHits.join(', ')})`, 'err');
+    return;
+  }
+
+  specView.textContent = JSON.stringify(spec, null, 2);
+  genPrompt.textContent = prompt.gen;
+  negPrompt.textContent = prompt.neg;
+  revPrompt.textContent = prompt.rev;
+  localStorage.setItem('currentSpec', JSON.stringify(spec));
+  localStorage.setItem('lastPromptBundle', JSON.stringify({ spec, prompt, generatedAt: new Date().toISOString() }));
+  setStatus('프롬프트 생성 완료.', 'ok');
 }
 
-function bind(){
-  document.getElementById('modeSeg').addEventListener('click', (e)=>{
-    if (!e.target.dataset.value) return;
-    state.mode = e.target.dataset.value;
-    setSegment('modeSeg', state.mode);
-    document.getElementById('productSec').classList.toggle('hidden', state.mode !== 'PRODUCT_IN_SCENE');
-    toggleProductPlacement();
-  });
-  document.getElementById('ratioSeg').addEventListener('click', (e)=>{
-    if (!e.target.dataset.value) return;
-    state.masterRatio = e.target.dataset.value;
-    setSegment('ratioSeg', state.masterRatio);
-    document.getElementById('ratioGuide').dataset.ratio = state.masterRatio;
-  });
-  document.getElementById('room').addEventListener('change', updatePlacementOptions);
-  document.getElementById('addPlacement').addEventListener('click', addCustomPlacement);
-  document.getElementById('scaleSlider').addEventListener('input', updateScaleText);
-  document.getElementById('generate').addEventListener('click', generate);
+function copyText(id){
+  navigator.clipboard.writeText(document.getElementById(id).textContent || '').then(()=>setStatus('복사 완료', 'ok'));
 }
 
-function toggleProductPlacement(){
-  const enabled = state.mode === 'PRODUCT_IN_SCENE';
-  const controls = document.getElementById('placementControls');
-  controls.classList.toggle('control-disabled', !enabled);
-  controls.querySelectorAll('select, input, button').forEach(el => {
-    el.disabled = !enabled;
+function savePreset(){
+  localStorage.setItem('preset_v1', JSON.stringify(getState()));
+  setStatus('Preset 저장 완료', 'ok');
+}
+function loadPreset(){
+  const raw = localStorage.getItem('preset_v1');
+  if (!raw){ setStatus('저장된 preset이 없습니다.', 'warn'); return; }
+  const s = JSON.parse(raw);
+  const loadedRoom = s.scene.room_code || s.scene.room;
+  if (loadedRoom && !document.querySelector(`#roomSeg button[data-value=\"${loadedRoom}\"]`)) {
+    CUSTOM_VALUES.rooms.add(loadedRoom);
+    document.getElementById('roomSeg').insertAdjacentHTML('beforeend', `<button type=\"button\" data-value=\"${loadedRoom}\">${loadedRoom}</button>`);
+    document.querySelector(`#roomSeg button[data-value=\"${loadedRoom}\"]`)
+      .addEventListener('click', ()=> { setSegmentValue('room', loadedRoom); refreshPlacementOptions(); });
+  }
+  setSegmentValue('room', loadedRoom);
+  refreshPlacementOptions();
+  setSegmentValue('time', s.scene.time_code || s.scene.time);
+  setSegmentValue('mood', s.scene.mood_code || s.scene.mood);
+  pitch.value=s.camera.pitch; yaw.value=String(s.camera.yaw);
+  setSegmentValue('distance', s.camera.distance_code || s.camera.distance);
+  setSegmentValue('lens', s.camera.lens_code || s.camera.lens);
+  const loadedLength = Number(s.product.length_cm);
+  const idx = LENGTH_BUCKETS.findIndex(b => b.value_cm === loadedLength);
+  lengthSlider.value = String(idx >= 0 ? idx : 1);
+  updateLengthLabel();
+  placement.dataset.prevValue = s.product.placement_code || s.product.placement;
+  refreshPlacementOptions();
+  setSegmentValue('keepout', s.product.keep_out);
+  setSegmentValue('density', s.props.density);
+  setSegmentValue('masterRatio', s.output.master_ratio);
+  derivativeSeg.querySelectorAll('button').forEach(btn => {
+    btn.classList.toggle('active', s.output.derivatives.includes(btn.dataset.ratio));
   });
+  if (!getSelectedDerivatives().length) derivativeSeg.querySelector('button')?.classList.add('active');
+  updateRatioPreview();
+  syncAnglePadFromInputs();
+  setStatus('Preset 불러오기 완료', 'ok');
 }
 
-(async function init(){
-  await loadLexicons();
-  populateBasics();
-  bind();
-  toggleProductPlacement();
-})();
+function logResult(pass){
+  const spec = JSON.parse(localStorage.getItem('currentSpec') || 'null');
+  if (!spec){ setStatus('먼저 Generate를 실행하세요.', 'warn'); return; }
+  logs.push({ time: new Date().toISOString(), pass, notes: notes.value.trim(), spec });
+  setStatus(pass ? 'Pass 기록됨' : 'Fail 기록됨', pass ? 'ok' : 'warn');
+}
+
+function exportLog(){
+  if (!logs.length){ setStatus('내보낼 로그가 없습니다.', 'warn'); return; }
+  let md = '# Session Log\n\n';
+  logs.forEach((l,i)=>{
+    md += `## ${i+1}. ${l.pass?'PASS':'FAIL'} - ${l.time}\n`;
+    md += `- notes: ${l.notes || '(none)'}\n`;
+    md += `- scene: ${l.spec.scene.room_code}/${l.spec.scene.time_code}/${l.spec.scene.mood_code} -> ${l.spec.scene.room_desc}/${l.spec.scene.time_desc}/${l.spec.scene.mood_desc}\n`;
+    md += `- camera: pitch ${l.spec.camera.pitch}, yaw ${l.spec.camera.yaw}, ${l.spec.camera.distance_code} (${l.spec.camera.distance_desc})\n\n`;
+  });
+  const blob = new Blob([md], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'session_log.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setStatus('로그 내보내기 완료', 'ok');
+}
+
+function resetForm(){
+  localStorage.removeItem('currentSpec');
+  specView.textContent=''; genPrompt.textContent=''; negPrompt.textContent=''; revPrompt.textContent='';
+  gates.innerHTML=''; notes.value='';
+  room.value = 'living_room';
+  setSegmentValue('time', 'evening');
+  setSegmentValue('mood', 'minimal_warm');
+  setSegmentValue('distance', 'medium');
+  setSegmentValue('lens', '35-50');
+  lengthSlider.value = '1';
+  updateLengthLabel();
+  placement.dataset.prevValue = 'side_table';
+  refreshPlacementOptions();
+  setSegmentValue('keepout', 'medium');
+  setSegmentValue('density', 'low');
+  setSegmentValue('masterRatio', '3:2');
+  updateRatioPreview();
+  derivativeSeg.querySelectorAll('button').forEach(btn => btn.classList.add('active'));
+  pitch.value = 20;
+  yaw.value = 30;
+  syncAnglePadFromInputs();
+  setStatus('기본값으로 초기화 완료', 'ok');
+}
+
+initSegments();
+initAngleTools();
+initAnglePad();
+initDerivativeToggles();
+refreshPlacementOptions();
+updateLengthLabel();
+updateRatioPreview();
+
+const generateBtn = document.getElementById('generate');
+const savePresetBtn = document.getElementById('savePreset');
+const loadPresetBtn = document.getElementById('loadPreset');
+const markPassBtn = document.getElementById('markPass');
+const markFailBtn = document.getElementById('markFail');
+const exportLogBtn = document.getElementById('exportLog');
+const resetBtn = document.getElementById('reset');
+
+generateBtn.addEventListener('click', generate);
+lengthSlider.addEventListener('input', updateLengthLabel);
+addRoomBtn.addEventListener('click', addCustomRoom);
+addPlacementBtn.addEventListener('click', addCustomPlacement);
+savePresetBtn.addEventListener('click', savePreset);
+loadPresetBtn.addEventListener('click', loadPreset);
+markPassBtn.addEventListener('click', ()=>logResult(true));
+markFailBtn.addEventListener('click', ()=>logResult(false));
+exportLogBtn.addEventListener('click', exportLog);
+resetBtn.addEventListener('click', resetForm);
 </script>
 </body>
 </html>
