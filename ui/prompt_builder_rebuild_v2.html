@@ -189,6 +189,34 @@ const LAYOUT_OPTIONS = [
   { id:'open-flow', label:'Open Flow', cue:'keep circulation lines readable and spatial flow unobstructed' }
 ];
 
+const DEFAULT_STYLE_PRESETS = {
+  modern_minimal: {
+    palette: 'neutral warm gray with soft contrast',
+    materials: 'oak wood, linen, matte plaster, brushed metal accents',
+    lighting: 'soft diffused daylight with gentle shadow falloff',
+    grading: 'clean neutral grading with mild highlight roll-off',
+    photography_vibe: 'calm editorial interior photograph'
+  },
+  cozy_natural: {
+    palette: 'earth tones with muted greens and warm whites',
+    materials: 'natural wood, woven fabric, ceramic details',
+    lighting: 'warm ambient lighting with window-side bounce',
+    grading: 'warm cinematic grade with soft blacks',
+    photography_vibe: 'inviting lived-in interior mood'
+  }
+};
+
+const DEFAULT_SCALES = [
+  { id:'tabletop_small', surface_prompt:'small accessory scale suitable for tabletop placement' },
+  { id:'console_medium', surface_prompt:'medium decor scale suitable for console or sideboard placement' },
+  { id:'floor_large', surface_prompt:'larger decor scale suitable for floor-adjacent staging' }
+];
+
+const LEXICON_PATHS = {
+  sceneDna: ['../lexicon/scene_dna.yml', './lexicon/scene_dna.yml', '/lexicon/scene_dna.yml'],
+  scaleBuckets: ['../lexicon/scale_buckets.yml', './lexicon/scale_buckets.yml', '/lexicon/scale_buckets.yml']
+};
+
 const state = {
   lexicon: null,
   values: {
@@ -235,13 +263,39 @@ function parseScaleBucketsYml(text){
 }
 
 async function loadLexicons(){
+  const readWithFallback = async (paths, label) => {
+    const failures = [];
+    for (const path of paths) {
+      try {
+        const r = await fetch(path);
+        if (!r.ok) {
+          throw new Error(`HTTP ${r.status} ${r.statusText || 'request failed'}`.trim());
+        }
+        return await r.text();
+      } catch (err) {
+        failures.push(`${path}: ${err?.message || err}`);
+      }
+    }
+    throw new Error(`${label} 로딩 실패 (${failures.join(' | ')})`);
+  };
+
   const [dnaText, scaleText] = await Promise.all([
-    fetch('../lexicon/scene_dna.yml').then(r=>r.text()),
-    fetch('../lexicon/scale_buckets.yml').then(r=>r.text())
+    readWithFallback(LEXICON_PATHS.sceneDna, 'scene_dna.yml'),
+    readWithFallback(LEXICON_PATHS.scaleBuckets, 'scale_buckets.yml')
   ]);
+
+  const parsedStylePresets = parseSceneDnaYml(dnaText).scene_dna || parseSceneDnaYml(dnaText);
+  const parsedScales = parseScaleBucketsYml(scaleText);
   state.lexicon = {
-    stylePresets: parseSceneDnaYml(dnaText).scene_dna || parseSceneDnaYml(dnaText),
-    scales: parseScaleBucketsYml(scaleText)
+    stylePresets: Object.keys(parsedStylePresets || {}).length ? parsedStylePresets : DEFAULT_STYLE_PRESETS,
+    scales: parsedScales.length ? parsedScales : DEFAULT_SCALES
+  };
+}
+
+function applyDefaultLexicon(){
+  state.lexicon = {
+    stylePresets: DEFAULT_STYLE_PRESETS,
+    scales: DEFAULT_SCALES
   };
 }
 
@@ -486,8 +540,17 @@ function renderAll(){
 }
 
 (async function init(){
-  await loadLexicons();
+  try {
+    await loadLexicons();
+    $('status').textContent = 'Lexicon loaded successfully.';
+  } catch (err) {
+    console.warn('lexicon load failed, using defaults', err);
+    applyDefaultLexicon();
+    $('status').textContent = 'lexicon 로딩 실패, 기본값으로 실행 중';
+  }
+
   state.values.stylePreset = Object.keys(state.lexicon.stylePresets)[0];
+  if (state.values.scaleIndex >= state.lexicon.scales.length) state.values.scaleIndex = 0;
   bind();
   renderAll();
 })();
