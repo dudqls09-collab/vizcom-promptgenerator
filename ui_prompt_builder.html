@@ -40,6 +40,33 @@
     .seg.seg-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
 
     .angle-tools { display:grid; gap:6px; }
+    .angle-pad-wrap { border:1px solid #33405a; border-radius:10px; background:#121826; padding:8px; }
+    .angle-pad {
+      position:relative;
+      width:100%;
+      aspect-ratio:1/1;
+      border:1px solid #3b4b6f;
+      border-radius:8px;
+      background:
+        linear-gradient(to right, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%),
+        linear-gradient(to bottom, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%),
+        #0f1522;
+      cursor:grab;
+      touch-action:none;
+    }
+    .angle-pad.dragging { cursor:grabbing; }
+    .angle-marker {
+      position:absolute;
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      border:2px solid #dce8ff;
+      background:#7aa2ff;
+      transform:translate(-50%, -50%);
+      box-shadow:0 0 0 3px rgba(122,162,255,0.2);
+      pointer-events:none;
+    }
+    .angle-hint { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; margin-top:4px; }
     .angle-row { display:grid; grid-template-columns:76px 1fr; gap:6px; align-items:center; }
     .nudge { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
     .nudge button, .preset-angle button { padding:6px; font-size:12px; }
@@ -84,8 +111,21 @@
 
       <div class="sec">
         <h3>Camera (빠른 의도 입력)</h3>
-        <label>Pitch / Yaw (5도 단위)</label>
+        <label>Angle Pad (드래그로 Pitch/Yaw 동시 제어 · 5도 스냅)</label>
         <div class="angle-tools">
+          <div class="angle-pad-wrap">
+            <div id="anglePad" class="angle-pad" aria-label="camera-angle-pad" tabindex="0">
+              <div id="angleMarker" class="angle-marker"></div>
+            </div>
+            <div class="angle-hint">
+              <span>Pitch: up (+)</span>
+              <span>Pitch: down (-)</span>
+            </div>
+            <div class="angle-hint">
+              <span>Yaw: left (-)</span>
+              <span>Yaw: right (+)</span>
+            </div>
+          </div>
           <div class="angle-row"><span>Pitch</span><input id="pitch" type="number" step="5" value="20" /></div>
           <div class="nudge" data-angle-target="pitch">
             <button type="button" data-delta="-10">-10</button>
@@ -214,7 +254,7 @@
 
     <section class="panel">
       <h2>3) Prompt Output</h2>
-      <label>Bizcom 생성 프롬프트</label>
+      <label>Vizcom 생성 프롬프트</label>
       <pre id="genPrompt"></pre>
       <button onclick="copyText('genPrompt')">Copy Prompt</button>
       <label>Negative Prompt</label>
@@ -237,7 +277,33 @@ const brandAvoid = [
   "harsh unrealistic reflections", "front-facing flat product shot"
 ];
 
+
 let logs = [];
+
+const room = document.getElementById('room');
+const time = document.getElementById('time');
+const mood = document.getElementById('mood');
+const pitch = document.getElementById('pitch');
+const yaw = document.getElementById('yaw');
+const distance = document.getElementById('distance');
+const lens = document.getElementById('lens');
+const scale = document.getElementById('scale');
+const placement = document.getElementById('placement');
+const keepout = document.getElementById('keepout');
+const density = document.getElementById('density');
+const masterRatio = document.getElementById('masterRatio');
+const d169 = document.getElementById('d169');
+const d11 = document.getElementById('d11');
+const d45 = document.getElementById('d45');
+const gates = document.getElementById('gates');
+const status = document.getElementById('status');
+const notes = document.getElementById('notes');
+const specView = document.getElementById('specView');
+const genPrompt = document.getElementById('genPrompt');
+const negPrompt = document.getElementById('negPrompt');
+const revPrompt = document.getElementById('revPrompt');
+const anglePad = document.getElementById('anglePad');
+const angleMarker = document.getElementById('angleMarker');
 
 function setSegmentValue(inputId, value){
   const input = document.getElementById(inputId);
@@ -260,6 +326,79 @@ function initSegments(){
 
 function updateAngle(id, nextValue){
   document.getElementById(id).value = Number(nextValue);
+}
+
+function clamp(num, min, max){
+  return Math.min(max, Math.max(min, num));
+}
+
+function syncAnglePadFromInputs(){
+  const yawValue = clamp(Number(yaw.value) || 0, -80, 80);
+  const pitchValue = clamp(Number(pitch.value) || 0, -60, 60);
+  yaw.value = yawValue;
+  pitch.value = pitchValue;
+
+  const xRatio = (yawValue + 80) / 160;
+  const yRatio = (60 - pitchValue) / 120;
+  angleMarker.style.left = `${xRatio * 100}%`;
+  angleMarker.style.top = `${yRatio * 100}%`;
+}
+
+function setAngleFromPadPointer(clientX, clientY){
+  const rect = anglePad.getBoundingClientRect();
+  const x = clamp(clientX - rect.left, 0, rect.width);
+  const y = clamp(clientY - rect.top, 0, rect.height);
+
+  const yawRaw = (x / rect.width) * 160 - 80;
+  const pitchRaw = 60 - (y / rect.height) * 120;
+
+  const yawSnap = Math.round(yawRaw / 5) * 5;
+  const pitchSnap = Math.round(pitchRaw / 5) * 5;
+
+  yaw.value = clamp(yawSnap, -80, 80);
+  pitch.value = clamp(pitchSnap, -60, 60);
+  syncAnglePadFromInputs();
+}
+
+function initAnglePad(){
+  let dragging = false;
+
+  anglePad.addEventListener('pointerdown', (event)=>{
+    dragging = true;
+    anglePad.classList.add('dragging');
+    anglePad.setPointerCapture(event.pointerId);
+    setAngleFromPadPointer(event.clientX, event.clientY);
+  });
+
+  anglePad.addEventListener('pointermove', (event)=>{
+    if (!dragging) return;
+    setAngleFromPadPointer(event.clientX, event.clientY);
+  });
+
+  anglePad.addEventListener('pointerup', (event)=>{
+    dragging = false;
+    anglePad.classList.remove('dragging');
+    anglePad.releasePointerCapture(event.pointerId);
+  });
+
+  anglePad.addEventListener('pointercancel', ()=>{
+    dragging = false;
+    anglePad.classList.remove('dragging');
+  });
+
+  pitch.addEventListener('input', syncAnglePadFromInputs);
+  yaw.addEventListener('input', syncAnglePadFromInputs);
+
+  anglePad.addEventListener('keydown', (event)=>{
+    const keyDelta = { ArrowLeft: [-5, 0], ArrowRight: [5, 0], ArrowUp: [0, 5], ArrowDown: [0, -5] }[event.key];
+    if (!keyDelta) return;
+    event.preventDefault();
+    yaw.value = Number(yaw.value || 0) + keyDelta[0];
+    pitch.value = Number(pitch.value || 0) + keyDelta[1];
+    syncAnglePadFromInputs();
+  });
+
+  syncAnglePadFromInputs();
 }
 
 function initAngleTools(){
@@ -317,7 +456,7 @@ function injectBrandGuard(spec){
 function composePrompt(spec){
   const yawDir = spec.camera.yaw >= 0 ? `right ${Math.abs(spec.camera.yaw)}` : `left ${Math.abs(spec.camera.yaw)}`;
   const gen = [
-    `Create a ${spec.scene.mood} ${spec.scene.room} in-situ interior scene for a ${spec.product.scale} home speaker.`,
+    `Create a ${spec.scene.mood} ${spec.scene.room} in-situ interior scene for a ${spec.product.scale} home speaker for Vizcom rendering.`,
     `Camera intent: pitch ${spec.camera.pitch} degrees, yaw ${yawDir}, ${spec.camera.distance} distance, ${spec.camera.lens}mm equivalent perspective.`,
     `Placement: ${spec.product.placement} with ${spec.product.keep_out} keep-out area around product.`,
     `Output master ratio ${spec.output.master_ratio}, keep composition crop-safe for ${spec.output.derivatives.join(', ')}.`,
@@ -392,6 +531,7 @@ function loadPreset(){
   setSegmentValue('density', s.props.density);
   setSegmentValue('masterRatio', s.output.master_ratio);
   d169.checked=s.output.derivatives.includes('16:9'); d11.checked=s.output.derivatives.includes('1:1'); d45.checked=s.output.derivatives.includes('4:5');
+  syncAnglePadFromInputs();
   setStatus('Preset 불러오기 완료', 'ok');
 }
 
@@ -424,19 +564,42 @@ function resetForm(){
   localStorage.removeItem('currentSpec');
   specView.textContent=''; genPrompt.textContent=''; negPrompt.textContent=''; revPrompt.textContent='';
   gates.innerHTML=''; notes.value='';
-  setStatus('세션 출력 초기화 완료', 'ok');
+  setSegmentValue('room', 'living_room');
+  setSegmentValue('time', 'evening');
+  setSegmentValue('mood', 'minimal_warm');
+  setSegmentValue('distance', 'medium');
+  setSegmentValue('lens', '35-50');
+  setSegmentValue('scale', 'onyx_class');
+  setSegmentValue('placement', 'side_table');
+  setSegmentValue('keepout', 'medium');
+  setSegmentValue('density', 'low');
+  setSegmentValue('masterRatio', '3:2');
+  d169.checked = true; d11.checked = true; d45.checked = true;
+  pitch.value = 20;
+  yaw.value = 30;
+  syncAnglePadFromInputs();
+  setStatus('기본값으로 초기화 완료', 'ok');
 }
 
 initSegments();
 initAngleTools();
+initAnglePad();
 
-generate.addEventListener('click', generate);
-savePreset.addEventListener('click', savePreset);
-loadPreset.addEventListener('click', loadPreset);
-markPass.addEventListener('click', ()=>logResult(true));
-markFail.addEventListener('click', ()=>logResult(false));
-exportLog.addEventListener('click', exportLog);
-reset.addEventListener('click', resetForm);
+const generateBtn = document.getElementById('generate');
+const savePresetBtn = document.getElementById('savePreset');
+const loadPresetBtn = document.getElementById('loadPreset');
+const markPassBtn = document.getElementById('markPass');
+const markFailBtn = document.getElementById('markFail');
+const exportLogBtn = document.getElementById('exportLog');
+const resetBtn = document.getElementById('reset');
+
+generateBtn.addEventListener('click', generate);
+savePresetBtn.addEventListener('click', savePreset);
+loadPresetBtn.addEventListener('click', loadPreset);
+markPassBtn.addEventListener('click', ()=>logResult(true));
+markFailBtn.addEventListener('click', ()=>logResult(false));
+exportLogBtn.addEventListener('click', exportLog);
+resetBtn.addEventListener('click', resetForm);
 </script>
 </body>
 </html>
