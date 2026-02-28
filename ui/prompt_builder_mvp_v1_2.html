@@ -116,6 +116,8 @@
       <h3>Current Surface Prompt</h3>
       <div class="prompt-actions">
         <button id="generate" type="button">Generate Prompt</button>
+        <button id="savePreset" type="button">Save Preset</button>
+        <button id="loadPreset" type="button">Load Preset</button>
       </div>
       <pre id="promptView"></pre>
     </section>
@@ -339,6 +341,99 @@ function generate(){
   document.getElementById('status').textContent = 'Generated from latest Spec.';
 }
 
+function getUiState(){
+  return {
+    mode: state.mode,
+    masterRatio: state.masterRatio,
+    customPlacements: state.customPlacements,
+    form: {
+      room: document.getElementById('room').value,
+      placement: document.getElementById('placement').value,
+      sceneDna: document.getElementById('sceneDna').value,
+      propDensity: document.getElementById('propDensity').value,
+      timeOfDay: document.getElementById('timeOfDay').value,
+      mood: document.getElementById('mood').value,
+      pitch: document.getElementById('pitch').value,
+      yaw: document.getElementById('yaw').value,
+      distance: document.getElementById('distance').value,
+      lens: document.getElementById('lens').value,
+      anchor: document.getElementById('anchor').value,
+      layout: document.getElementById('layout').value,
+      scaleSlider: document.getElementById('scaleSlider').value,
+      keepout: document.getElementById('keepout').value,
+      brandMoment: document.getElementById('brandMoment').value
+    }
+  };
+}
+
+function savePreset(){
+  localStorage.setItem('prompt_builder_v1_2_preset', JSON.stringify(getUiState()));
+  document.getElementById('status').textContent = 'Preset saved.';
+}
+
+function loadPreset(){
+  const raw = localStorage.getItem('prompt_builder_v1_2_preset');
+  if (!raw) {
+    document.getElementById('status').textContent = 'No preset saved yet.';
+    return;
+  }
+
+  let saved;
+  try {
+    saved = JSON.parse(raw);
+  } catch {
+    document.getElementById('status').textContent = 'Preset data is invalid.';
+    return;
+  }
+
+  state.mode = saved.mode || 'SCENE_ONLY';
+  state.masterRatio = saved.masterRatio || '3:2';
+  state.customPlacements = saved.customPlacements || {};
+
+  setSegment('modeSeg', state.mode);
+  setSegment('ratioSeg', state.masterRatio);
+  document.getElementById('ratioGuide').dataset.ratio = state.masterRatio;
+  document.getElementById('productSec').classList.toggle('hidden', state.mode !== 'PRODUCT_IN_SCENE');
+
+  const form = saved.form || {};
+  document.getElementById('room').value = form.room || document.getElementById('room').value;
+  updatePlacementOptions();
+
+  const placementEl = document.getElementById('placement');
+  const wantedPlacement = form.placement || placementEl.value;
+  if (wantedPlacement) {
+    const hasOption = [...placementEl.options].some(opt => opt.value === wantedPlacement);
+    if (!hasOption) {
+      const room = document.getElementById('room').value;
+      if (!state.customPlacements[room]) state.customPlacements[room] = [];
+      if (!state.customPlacements[room].includes(wantedPlacement)) {
+        state.customPlacements[room].push(wantedPlacement);
+      }
+      updatePlacementOptions();
+    }
+    placementEl.value = wantedPlacement;
+  }
+
+  document.getElementById('sceneDna').value = form.sceneDna || document.getElementById('sceneDna').value;
+  document.getElementById('propDensity').value = form.propDensity || document.getElementById('propDensity').value;
+  document.getElementById('timeOfDay').value = form.timeOfDay || document.getElementById('timeOfDay').value;
+  document.getElementById('mood').value = form.mood || document.getElementById('mood').value;
+  document.getElementById('pitch').value = form.pitch || document.getElementById('pitch').value;
+  document.getElementById('yaw').value = form.yaw || document.getElementById('yaw').value;
+  document.getElementById('distance').value = form.distance || document.getElementById('distance').value;
+  document.getElementById('lens').value = form.lens || document.getElementById('lens').value;
+  document.getElementById('anchor').value = form.anchor || document.getElementById('anchor').value;
+  document.getElementById('layout').value = form.layout || document.getElementById('layout').value;
+  document.getElementById('scaleSlider').value = form.scaleSlider || document.getElementById('scaleSlider').value;
+  document.getElementById('keepout').value = form.keepout || document.getElementById('keepout').value;
+  document.getElementById('brandMoment').value = form.brandMoment || document.getElementById('brandMoment').value;
+
+  updateScaleText();
+  toggleProductPlacement();
+  generate();
+  document.getElementById('status').textContent = 'Preset loaded.';
+}
+
 function bind(){
   document.getElementById('modeSeg').addEventListener('click', (e)=>{
     if (!e.target.dataset.value) return;
@@ -357,6 +452,8 @@ function bind(){
   document.getElementById('addPlacement').addEventListener('click', addCustomPlacement);
   document.getElementById('scaleSlider').addEventListener('input', updateScaleText);
   document.getElementById('generate').addEventListener('click', generate);
+  document.getElementById('savePreset').addEventListener('click', savePreset);
+  document.getElementById('loadPreset').addEventListener('click', loadPreset);
 }
 
 function toggleProductPlacement(){
