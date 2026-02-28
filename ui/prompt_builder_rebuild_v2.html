@@ -1,546 +1,468 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interior Scene Prompt Builder Rebuild v2.0</title>
+  <title>Interior Scene Prompt Builder Rebuild v2.3</title>
   <style>
-    :root { --bg:#0f1115; --panel:#171a21; --line:#2a2f3a; --text:#e9edf5; --muted:#a4adbd; --accent:#7aa2ff; --ok:#19c37d; --bad:#ff5d6c; }
+    :root { --bg:#0f1115; --panel:#171a21; --line:#2a2f3a; --text:#e9edf5; --muted:#a4adbd; --accent:#7aa2ff; --ok:#19c37d; --bad:#ff5d6c; --off:#5a6375; }
     * { box-sizing:border-box; font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
     body { margin:0; background:var(--bg); color:var(--text); }
     header { padding:14px 18px; border-bottom:1px solid var(--line); }
     h1 { margin:0; font-size:18px; }
     .meta { color:var(--muted); font-size:12px; margin-top:4px; }
-    .wrap { display:grid; grid-template-columns: minmax(360px, 420px) minmax(0, 1fr) minmax(0, 1fr); gap:12px; padding:12px; min-height: calc(100vh - 56px); }
+    .wrap { display:grid; grid-template-columns:minmax(680px,1.5fr) minmax(420px,1fr); gap:12px; padding:12px; min-height:calc(100vh - 56px); }
     .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; overflow:auto; }
-    .sec { border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px; }
-    label { display:block; font-size:12px; color:var(--muted); margin:8px 0 6px; }
-    input, textarea, select, button { width:100%; background:#12151b; color:var(--text); border:1px solid #303747; border-radius:8px; padding:8px; font-size:13px; }
+    .control-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .sec { border:1px solid var(--line); border-radius:10px; padding:10px; }
+    .sec h3 { margin:0 0 8px; font-size:13px; }
+    label { display:block; margin:8px 0 6px; color:var(--muted); font-size:12px; }
+    button, input, textarea { width:100%; background:#12151b; color:var(--text); border:1px solid #303747; border-radius:8px; padding:8px; font-size:13px; }
     button { cursor:pointer; }
     button:hover { border-color:var(--accent); }
-    .seg { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
-    .seg.seg-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .seg { display:grid; gap:6px; grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .seg.seg-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .seg.seg-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
     .seg button.active { background:#1e2d4d; border-color:#5c7ecf; }
-    .chips { display:flex; flex-wrap:wrap; gap:6px; }
+    .seg button.off { color:var(--off); border-color:#3b4252; background:#151820; cursor:not-allowed; }
+    .tiny { font-size:11px; color:var(--muted); margin-top:4px; }
+    .angle-pad-wrap { border:1px solid #33405a; border-radius:10px; background:#121826; padding:8px; max-width:190px; }
+    .angle-pad { position:relative; width:100%; aspect-ratio:1/1; border:1px solid #3b4b6f; border-radius:8px; background:linear-gradient(to right, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%), linear-gradient(to bottom, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%), #0f1522; cursor:crosshair; }
+    .angle-marker { position:absolute; width:12px; height:12px; border-radius:50%; border:2px solid #dce8ff; background:#7aa2ff; transform:translate(-50%,-50%); box-shadow:0 0 0 3px rgba(122,162,255,.2); pointer-events:none; }
+    .camera-row { display:grid; grid-template-columns:200px 1fr; gap:10px; }
+    .btns3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:10px; }
+    pre { white-space:pre-wrap; word-break:break-word; background:#11141a; border:1px solid #2b3342; border-radius:8px; padding:10px; min-height:340px; font-size:12px; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
     .chip { padding:4px 8px; border-radius:999px; font-size:11px; border:1px solid #39445d; background:#151c2b; }
     .chip.ok { border-color:#1f5a43; color:#96f0c8; }
     .chip.bad { border-color:#6d2b35; color:#ffadb7; }
-    .inline { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .hidden { display:none; }
-    .preview-frame { width:100%; aspect-ratio:16 / 10; border:1px solid #3a4357; border-radius:8px; background:#0f141f; display:flex; align-items:center; justify-content:center; margin-top:6px; }
-    .ratio-guide { border:2px dashed #7aa2ff; width:80%; transition:all .2s ease; }
-    .ratio-guide[data-ratio="3:2"] { aspect-ratio:3 / 2; }
-    .ratio-guide[data-ratio="1:1"] { aspect-ratio:1 / 1; }
-    .control-disabled { opacity:.45; }
-    .prompt-actions { display:flex; gap:8px; margin-bottom:8px; }
-    .prompt-actions button { flex:1; }
-    pre { white-space:pre-wrap; word-break:break-word; background:#11141a; border:1px solid #2b3342; border-radius:8px; padding:10px; font-size:12px; }
-    .angle-pad-wrap { border:1px solid #33405a; border-radius:10px; background:#121826; padding:8px; }
-    .angle-pad { position:relative; width:100%; aspect-ratio:1/1; border:1px solid #3b4b6f; border-radius:8px; background:linear-gradient(to right, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%), linear-gradient(to bottom, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%), #0f1522; cursor:crosshair; }
-    .angle-marker { position:absolute; width:14px; height:14px; border-radius:999px; border:2px solid #dce8ff; background:#7aa2ff; transform:translate(-50%, -50%); box-shadow:0 0 0 3px rgba(122,162,255,0.2); pointer-events:none; }
-    .btns3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
-    @media (max-width: 1200px) { .wrap { grid-template-columns:1fr; } }
+    .status { margin-top:8px; color:var(--muted); font-size:12px; }
+    textarea { min-height:66px; resize:vertical; }
+    @media (max-width: 1200px) { .wrap, .control-grid, .camera-row { grid-template-columns:1fr; } .angle-pad-wrap { max-width:100%; } }
   </style>
 </head>
 <body>
   <header>
-    <h1>Interior Scene Prompt Builder Rebuild v2.0</h1>
-    <div class="meta">Single-source state · Unique action IDs · Preset Save/Load · Stable gate pipeline</div>
+    <h1>Interior Scene Prompt Builder Rebuild v2.3</h1>
+    <div class="meta">Left: controls (wider) · Right: prompt generation</div>
   </header>
+
   <div class="wrap">
     <section class="panel">
-      <div class="sec">
-        <label>Goal Mode</label>
-        <div class="seg" id="modeSeg">
-          <button data-value="SCENE_ONLY" class="active" type="button">SCENE_ONLY</button>
-          <button data-value="PRODUCT_IN_SCENE" type="button">PRODUCT_IN_SCENE</button>
+      <div class="control-grid">
+        <div class="sec">
+          <h3>Space</h3>
+          <label>Primary Space</label>
+          <div class="seg seg-4" id="spaceSeg"></div>
+          <label>In-space Placement</label>
+          <div class="seg seg-2" id="placementSeg"></div>
+          <div class="tiny">Disabled options stay visible to preserve layout.</div>
+          <label>Scale</label>
+          <div class="seg seg-4" id="scaleSeg"></div>
+          <div id="scaleText" class="tiny"></div>
         </div>
-      </div>
-      <div class="sec">
-        <label>Output Settings</label>
-        <label>Master Ratio</label>
-        <div class="seg" id="ratioSeg">
-          <button data-value="1:1" type="button">1:1</button>
-          <button data-value="3:2" class="active" type="button">3:2</button>
+
+        <div class="sec">
+          <h3>Scene Style</h3>
+          <label>Scene DNA Preset</label>
+          <div class="seg seg-2" id="sceneDnaSeg"></div>
+          <label>Time of Day</label>
+          <div class="seg seg-3" id="timeSeg"></div>
+          <label>Decor Density</label>
+          <div class="seg seg-3" id="densitySeg"></div>
+          <label>Distance</label>
+          <div class="seg seg-3" id="distanceSeg"></div>
+          <label>Lens</label>
+          <div class="seg seg-3" id="lensSeg"></div>
         </div>
-        <label>Ratio Preview</label>
-        <div class="preview-frame"><div id="ratioGuide" class="ratio-guide" data-ratio="3:2"></div></div>
-      </div>
-      <div class="sec">
-        <label>Scene & Product</label>
-        <label>Room</label>
-        <select id="room"></select>
-        <div id="placementControls">
-          <label>Placement</label>
-          <select id="placement"></select>
-          <label>Custom Placement (active room)</label>
-          <div class="inline">
-            <input id="customPlacement" placeholder="e.g. on floating wall console" />
-            <button id="addPlacement" type="button">Add</button>
+
+        <div class="sec" style="grid-column:1 / -1;">
+          <h3>Camera</h3>
+          <div class="camera-row">
+            <div class="angle-pad-wrap">
+              <div id="anglePad" class="angle-pad"><div id="angleMarker" class="angle-marker"></div></div>
+              <div class="tiny" id="angleReadout">Pitch 20° · Yaw Right 30°</div>
+            </div>
+            <div>
+              <label>Angle Presets</label>
+              <div class="seg seg-3" id="anglePresetSeg"></div>
+              <label>Keep-out Clause</label>
+              <textarea id="keepout">clear perimeter around hero subject</textarea>
+              <label>Scene Intent</label>
+              <textarea id="brandMoment">composition prepared for later object compositing</textarea>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="sec">
-        <label>Scene DNA Preset</label>
-        <select id="sceneDna"></select>
-        <label>Prop Density</label>
-        <select id="propDensity"><option>low</option><option selected>medium</option><option>high</option></select>
-        <label>Time of Day</label>
-        <select id="timeOfDay"><option>daytime</option><option>golden hour</option><option>evening</option></select>
-        <label>Mood</label>
-        <input id="mood" value="calm premium lifestyle" />
-      </div>
-      <div class="sec">
-        <label>Camera Control</label>
-        <div class="angle-pad-wrap">
-          <div id="anglePad" class="angle-pad"><div id="angleMarker" class="angle-marker"></div></div>
+
+        <div class="sec">
+          <h3>Anchor Zone</h3>
+          <div class="seg seg-2" id="anchorSeg"></div>
         </div>
-        <div class="inline">
-          <div><label>Pitch (°)</label><input id="pitch" type="number" value="20" /></div>
-          <div><label>Yaw (°)</label><input id="yaw" type="number" value="30" /></div>
+
+        <div class="sec">
+          <h3>Layout Cue</h3>
+          <div class="seg seg-2" id="layoutSeg"></div>
         </div>
-        <label>Distance</label><select id="distance"><option>near-medium distance</option><option>wide distance</option><option>close distance</option></select>
-        <label>Lens mm Equiv</label><input id="lens" type="number" value="35" />
       </div>
-      <div class="sec">
-        <label>Anchor Zone</label><input id="anchor" value="leave intentional negative space on center-right" />
-        <label>Architecture/Layout cue</label><input id="layout" value="clean contemporary interior layout with readable circulation" />
-      </div>
-      <div id="productSec" class="sec hidden">
-        <label>Scale Slider (10cm ~ 50cm+)</label>
-        <input id="scaleSlider" type="range" min="0" max="3" step="1" value="1" />
-        <div id="scaleText"></div>
-        <label>Keep-out Clause</label><input id="keepout" value="clear perimeter around hero subject" />
-        <label>Scene Intent</label><input id="brandMoment" value="composition prepared for later object compositing" />
-      </div>
+
       <div class="btns3">
-        <button id="generateBtn" type="button">Generate</button>
         <button id="savePresetBtn" type="button">Save Preset</button>
         <button id="loadPresetBtn" type="button">Load Preset</button>
-      </div>
-      <div class="btns3" style="margin-top:8px;">
-        <button id="exportLogBtn" type="button">Export Session Log</button>
         <button id="resetBtn" type="button">Reset</button>
-        <button id="copyPromptBtn" type="button">Copy Prompt</button>
       </div>
-      <div id="status" class="meta" style="margin-top:8px;"></div>
+      <div class="status" id="status"></div>
     </section>
 
     <section class="panel">
-      <h3>Gate Status</h3>
-      <div class="chips" id="gates"></div>
-      <h3>Current Spec</h3>
-      <pre id="specView"></pre>
-    </section>
-
-    <section class="panel">
-      <h3>Current Surface Prompt</h3>
+      <h3>Prompt</h3>
+      <div class="btns3" style="margin-top:0; margin-bottom:8px;">
+        <button id="generateBtn" type="button">Generate Prompt</button>
+        <button id="copyPromptBtn" type="button">Copy Prompt</button>
+        <button id="exportLogBtn" type="button">Export Session Log</button>
+      </div>
       <pre id="promptView"></pre>
+      <div class="chips" id="quickChecks"></div>
     </section>
   </div>
 
 <script>
-const state = {
-  mode: 'SCENE_ONLY',
-  masterRatio: '3:2',
-  customPlacements: {},
-  lexicon: null,
-  logs: []
+const OPTIONS = {
+  spaces: [
+    {id:'living room', label:'Living Room'},
+    {id:'bedroom', label:'Bedroom'},
+    {id:'dining area', label:'Dining Area'},
+    {id:'kitchen', label:'Kitchen'},
+    {id:'home office', label:'Home Office / Study'},
+    {id:'entryway', label:'Entryway / Hallway'},
+    {id:'home outdoor', label:'Home Outdoor'}
+  ],
+  placementsBySpace: {
+    'living room': ['by the sofa','on the side table','on the media console','on the floating shelf','near the window bench','on the rug edge'],
+    'bedroom': ['on the nightstand','on the dresser top','on the bedside shelf','on the foot bench','near the curtain side'],
+    'dining area': ['at the table center','on the sideboard','on the wall shelf','near the dining corner'],
+    'kitchen': ['on the kitchen island','on the counter corner','on the breakfast bar','on the open shelf'],
+    'home office': ['on the desk corner','on the side credenza','on the bookshelf','near the reading chair'],
+    'entryway': ['on the entry console','on the shoe cabinet top','on the hallway niche shelf','near the entry bench'],
+    'home outdoor': ['on the patio table','on the terrace console','by the balcony railing','near the outdoor lounge chair','on the deck side table','at the garden seating edge']
+  },
+  allPlacements: ['by the sofa','on the side table','on the media console','on the floating shelf','near the window bench','on the rug edge','on the nightstand','on the dresser top','on the bedside shelf','on the foot bench','near the curtain side','at the table center','on the sideboard','on the wall shelf','near the dining corner','on the kitchen island','on the counter corner','on the breakfast bar','on the open shelf','on the desk corner','on the side credenza','on the bookshelf','near the reading chair','on the entry console','on the shoe cabinet top','on the hallway niche shelf','near the entry bench','on the patio table','on the terrace console','by the balcony railing','near the outdoor lounge chair','on the deck side table','at the garden seating edge'],
+  times:['Daytime','Golden Hour','Evening'],
+  density:['Low','Medium','High'],
+  distances:['Wide shot','Medium shot','Close shot'],
+  lenses:[
+    {id:'wide', label:'Wide (16-28mm)', cue:'wide-angle perspective'},
+    {id:'standard', label:'Standard (35-50mm)', cue:'natural perspective'},
+    {id:'tele', label:'Telephoto (70-100mm)', cue:'compressed perspective'}
+  ],
+  anglePresets:[
+    {id:'eye-threequarter', label:'Eye-level 3/4', pitch:10, yaw:30},
+    {id:'elevated-threequarter', label:'Elevated 3/4', pitch:25, yaw:35},
+    {id:'low-threequarter', label:'Low 3/4', pitch:-5, yaw:25},
+    {id:'frontal', label:'Frontal', pitch:8, yaw:0},
+    {id:'side', label:'Side', pitch:10, yaw:65},
+    {id:'top-down-soft', label:'Soft Top-down', pitch:35, yaw:15}
+  ],
+  anchors:[
+    {id:'center clear', label:'Center clear', cue:'keep central negative space for subject readability'},
+    {id:'right third clear', label:'Right-third clear', cue:'maintain clear negative space in the right third'},
+    {id:'left third clear', label:'Left-third clear', cue:'maintain clear negative space in the left third'},
+    {id:'foreground clear', label:'Foreground clear', cue:'keep the foreground uncluttered to improve depth separation'}
+  ],
+  layouts:[
+    {id:'symmetry', label:'Balanced symmetry', cue:'use a balanced symmetrical composition with stable verticals'},
+    {id:'asymmetry', label:'Balanced asymmetry', cue:'use a balanced asymmetrical composition with intentional visual weight'},
+    {id:'depth layering', label:'Depth layering', cue:'emphasize foreground, midground, and background separation'},
+    {id:'open circulation', label:'Open circulation', cue:'keep circulation lines readable and spatial flow unobstructed'}
+  ]
 };
 
+const state = {
+  lexicon:null,
+  values: {
+    space:'living room',
+    placement:'by the sofa',
+    sceneDna:'',
+    time:'Daytime',
+    density:'Medium',
+    distance:'Medium shot',
+    lens:'wide',
+    scale:1,
+    pitch:20,
+    yaw:30,
+    anchor:'right third clear',
+    layout:'asymmetry'
+  },
+  logs:[]
+};
+
+const $ = id => document.getElementById(id);
+
 function stripQuote(v){ return (v || '').replace(/^"|"$/g, '').trim(); }
-
-function parseRoomPlacementYml(text){
-  const out = {};
-  let room = null;
-  let item = null;
-  text.split('\n').forEach((line)=>{
-    if (/^\s{2}[a-z_]+:$/.test(line)) { room = line.trim().slice(0, -1); out[room] = []; item = null; return; }
-    if (/^\s{4}- id: /.test(line)) { item = { id: line.split(':').slice(1).join(':').trim() }; out[room].push(item); return; }
-    if (/^\s{6}prompt: /.test(line) && item) item.prompt = stripQuote(line.split(':').slice(1).join(':'));
-  });
-  return out;
-}
-
 function parseSceneDnaYml(text){
-  const out = {};
-  let preset = null;
+  const out = {}; let preset = null;
   text.split('\n').forEach((line)=>{
-    if (/^\s{2}[a-z_]+:$/.test(line)) { preset = line.trim().slice(0, -1); out[preset] = {}; return; }
-    if (/^\s{4}[a-z_]+: /.test(line) && preset) {
-      const idx = line.indexOf(':');
-      const key = line.trim().slice(0, line.trim().indexOf(':'));
-      const val = stripQuote(line.slice(idx + 1));
-      out[preset][key] = val;
-    }
+    if (/^\s{2}[a-z_]+:$/.test(line)) { preset = line.trim().slice(0,-1); out[preset] = {}; return; }
+    if (/^\s{4}[a-z_]+: /.test(line) && preset) { const idx=line.indexOf(':'); const key=line.trim().slice(0,line.trim().indexOf(':')); out[preset][key]=stripQuote(line.slice(idx+1)); }
   });
   return out;
 }
-
 function parseScaleBucketsYml(text){
-  const out = [];
-  let item = null;
+  const out=[]; let item=null;
   text.split('\n').forEach((line)=>{
-    if (/^\s{2}- id: /.test(line)) { item = { id: line.split(':').slice(1).join(':').trim() }; out.push(item); return; }
+    if (/^\s{2}- id: /.test(line)) { item={id:line.split(':').slice(1).join(':').trim()}; out.push(item); return; }
     if (!item) return;
-    if (/^\s{4}surface_prompt: /.test(line)) item.surface_prompt = stripQuote(line.split(':').slice(1).join(':'));
+    if (/^\s{4}surface_prompt: /.test(line)) item.surface_prompt=stripQuote(line.split(':').slice(1).join(':'));
   });
   return out;
 }
 
 async function loadLexicons(){
-  const [roomText, scaleText, dnaText] = await Promise.all([
-    fetch('../lexicon/room_placement_map.yml').then(r=>r.text()),
-    fetch('../lexicon/scale_buckets.yml').then(r=>r.text()),
-    fetch('../lexicon/scene_dna.yml').then(r=>r.text())
+  const [dnaText,scaleText] = await Promise.all([
+    fetch('../lexicon/scene_dna.yml').then(r=>r.text()),
+    fetch('../lexicon/scale_buckets.yml').then(r=>r.text())
   ]);
   state.lexicon = {
-    roomPlacement: parseRoomPlacementYml(roomText).room_placement_map || parseRoomPlacementYml(roomText),
-    scaleBuckets: parseScaleBucketsYml(scaleText),
-    sceneDna: parseSceneDnaYml(dnaText).scene_dna || parseSceneDnaYml(dnaText)
+    sceneDna: parseSceneDnaYml(dnaText).scene_dna || parseSceneDnaYml(dnaText),
+    scaleBuckets: parseScaleBucketsYml(scaleText)
   };
 }
 
-function populateBasics(){
-  room.innerHTML = Object.keys(state.lexicon.roomPlacement).map(r=>`<option value="${r}">${r}</option>`).join('');
-  sceneDna.innerHTML = Object.keys(state.lexicon.sceneDna).map(k=>`<option value="${k}">${k}</option>`).join('');
-  updatePlacementOptions();
-  updateScaleText();
-}
-
-function setSegment(groupId, value){
-  document.querySelectorAll(`#${groupId} button`).forEach(btn=>btn.classList.toggle('active', btn.dataset.value === value));
-}
-
-function updatePlacementOptions(){
-  const roomValue = room.value;
-  const base = (state.lexicon.roomPlacement[roomValue] || []).map(x=>x.prompt);
-  const custom = state.customPlacements[roomValue] || [];
-  const options = [...new Set([...base, ...custom])];
-  placement.innerHTML = options.map(p=>`<option value="${p}">${p}</option>`).join('');
-}
-
-function addCustomPlacement(){
-  const roomValue = room.value;
-  const value = customPlacement.value.trim();
-  if (!value) return;
-  if (!state.customPlacements[roomValue]) state.customPlacements[roomValue] = [];
-  state.customPlacements[roomValue].push(value);
-  customPlacement.value = '';
-  updatePlacementOptions();
-  placement.value = value;
-}
-
-function updateScaleText(){
-  const bucket = state.lexicon.scaleBuckets[Number(scaleSlider.value)];
-  scaleText.textContent = bucket ? bucket.surface_prompt : '';
-}
-
-function sanitizeProductKeywords(text){
-  return (text || '').replace(/\bproducts\b/gi, 'subjects').replace(/\bproduct\b/gi, 'subject').replace(/제품/g, '대상체');
-}
-
-function getSpec(){
-  const sceneDnaPreset = sceneDna.value;
-  const dna = state.lexicon.sceneDna[sceneDnaPreset];
-  const spec = {
-    mode: state.mode,
-    scene: {
-      room_type: room.value,
-      time_of_day: timeOfDay.value,
-      mood: mood.value,
-      scene_dna_preset: sceneDnaPreset
-    },
-    camera: {
-      pitch: Number(pitch.value),
-      yaw: Number(yaw.value),
-      distance: distance.value,
-      lens_mm_equiv: Number(lens.value)
-    },
-    composition: {
-      decor_density: propDensity.value,
-      anchor_zone: anchor.value,
-      crop_safe: 'master ratio only'
-    },
-    output: { master_ratio: state.masterRatio },
-    scene_dna: dna,
-    architecture_layout: layout.value
-  };
-  if (state.mode === 'PRODUCT_IN_SCENE') {
-    const idx = Number(scaleSlider.value);
-    spec.product = {
-      placement: placement.value,
-      scale_bucket_cm: state.lexicon.scaleBuckets[idx].id,
-      scale_surface: state.lexicon.scaleBuckets[idx].surface_prompt,
-      keepout_clause: keepout.value,
-      brand_moment_sentence: brandMoment.value
-    };
-  }
-  return spec;
-}
-
-function compilePrompt(spec){
-  const yawDir = spec.camera.yaw >= 0 ? 'right' : 'left';
-  const yawAbs = Math.abs(spec.camera.yaw);
-  const core = [
-    `${spec.scene.room_type} interior`,
-    `${spec.scene.time_of_day} light`,
-    spec.scene.mood,
-    spec.architecture_layout,
-    `scene palette: ${spec.scene_dna.palette}`,
-    `scene materials: ${spec.scene_dna.materials}`,
-    `scene lighting: ${spec.scene_dna.lighting}`,
-    `scene tone: ${spec.scene_dna.grading}`,
-    `decor: ${spec.composition.decor_density}`,
-    `photography: ${spec.scene_dna.photography_vibe}`,
-    `anchor zone: ${spec.composition.anchor_zone}`,
-    `camera: three-quarter interior viewpoint, pitch ${spec.camera.pitch}°, yaw ${yawDir} ${yawAbs}°, ${spec.camera.distance}, ${spec.camera.lens_mm_equiv}mm`,
-    `framing: master ${spec.output.master_ratio}`
-  ];
-  if (spec.mode === 'PRODUCT_IN_SCENE') {
-    core.push(`staging surface: ${sanitizeProductKeywords(spec.product.placement)}`);
-    core.push(`clearance: ${sanitizeProductKeywords(spec.product.keepout_clause)}`);
-    core.push(`support scale: ${sanitizeProductKeywords(spec.product.scale_surface)}`);
-    core.push(`scene intent: ${sanitizeProductKeywords(spec.product.brand_moment_sentence)}`);
-  }
-  const compiled = core.join(', ');
-  return spec.mode === 'PRODUCT_IN_SCENE' ? sanitizeProductKeywords(compiled) : compiled;
-}
-
-function runGates(spec, prompt){
-  const roomAllowlist = (state.lexicon.roomPlacement[spec.scene.room_type] || []).map(x=>x.prompt);
-  const custom = state.customPlacements[spec.scene.room_type] || [];
-  const allPlacements = [...roomAllowlist, ...custom];
-  const dnaSlotsPresent = ['scene palette:', 'scene materials:', 'scene lighting:', 'scene tone:', 'decor:', 'photography:'].every(x=>prompt.includes(x));
-  return [
-    { ok: ['1:1', '3:2'].includes(spec.output.master_ratio), msg: 'master_ratio ∈ {1:1,3:2}' },
-    { ok: spec.mode === 'SCENE_ONLY' || allPlacements.includes(spec.product.placement), msg: 'placement allowlist/custom room' },
-    { ok: spec.mode !== 'SCENE_ONLY' || !prompt.includes('staging surface:'), msg: 'SCENE_ONLY excludes staging slots' },
-    { ok: spec.mode !== 'PRODUCT_IN_SCENE' || (prompt.includes('staging surface:') && prompt.includes('clearance:') && prompt.includes('support scale:')), msg: 'PRODUCT_IN_SCENE includes staging slots' },
-    { ok: spec.mode !== 'PRODUCT_IN_SCENE' || !/\bproduct\b/i.test(prompt), msg: 'PRODUCT_IN_SCENE avoids direct product keyword' },
-    { ok: dnaSlotsPresent, msg: 'Scene DNA 6-slot bundle present' }
-  ];
-}
-
-function renderGates(results){
-  gates.innerHTML = '';
-  results.forEach(g => {
-    const d = document.createElement('div');
-    d.className = `chip ${g.ok ? 'ok' : 'bad'}`;
-    d.textContent = `${g.ok ? 'PASS' : 'FAIL'} · ${g.msg}`;
-    gates.appendChild(d);
+function renderButtons(rootId, items, value, onClick, labelFn=(x)=>x, keyFn=(x)=>x){
+  const root = $(rootId);
+  root.innerHTML = '';
+  items.forEach(item=>{
+    const key = keyFn(item);
+    const btn = document.createElement('button');
+    btn.type='button';
+    btn.dataset.value = key;
+    btn.textContent = labelFn(item);
+    if (value === key) btn.classList.add('active');
+    btn.addEventListener('click', ()=>onClick(key));
+    root.appendChild(btn);
   });
 }
 
-function generate(){
-  const spec = getSpec();
-  const prompt = compilePrompt(spec);
-  renderGates(runGates(spec, prompt));
-  specView.textContent = JSON.stringify(spec, null, 2);
-  promptView.textContent = prompt;
-  state.logs.push({ ts: new Date().toISOString(), mode: spec.mode, ratio: spec.output.master_ratio, gateFailCount: runGates(spec, prompt).filter(g=>!g.ok).length });
-  status.textContent = 'Generated from latest Spec.';
+function renderPlacementButtons(){
+  const allowed = new Set(OPTIONS.placementsBySpace[state.values.space] || []);
+  const root = $('placementSeg');
+  root.innerHTML = '';
+  OPTIONS.allPlacements.forEach(p=>{
+    const btn = document.createElement('button');
+    btn.type='button';
+    btn.dataset.value = p;
+    btn.textContent = p;
+    const enabled = allowed.has(p);
+    if (!enabled) {
+      btn.disabled = true;
+      btn.classList.add('off');
+    }
+    if (state.values.placement === p) btn.classList.add('active');
+    btn.addEventListener('click', ()=>{
+      if (!enabled) return;
+      state.values.placement = p;
+      renderPlacementButtons();
+    });
+    root.appendChild(btn);
+  });
+
+  if (!allowed.has(state.values.placement)) {
+    state.values.placement = [...allowed][0] || OPTIONS.allPlacements[0];
+    renderPlacementButtons();
+  }
 }
 
-function getUiState(){
-  return {
-    mode: state.mode,
-    masterRatio: state.masterRatio,
-    customPlacements: state.customPlacements,
-    form: {
-      room: room.value,
-      placement: placement.value,
-      sceneDna: sceneDna.value,
-      propDensity: propDensity.value,
-      timeOfDay: timeOfDay.value,
-      mood: mood.value,
-      pitch: pitch.value,
-      yaw: yaw.value,
-      distance: distance.value,
-      lens: lens.value,
-      anchor: anchor.value,
-      layout: layout.value,
-      scaleSlider: scaleSlider.value,
-      keepout: keepout.value,
-      brandMoment: brandMoment.value
-    }
-  };
+function renderScaleButtons(){
+  const items = state.lexicon.scaleBuckets.map((b,i)=>({i, label:b.id.replaceAll('_',' ')}));
+  renderButtons('scaleSeg', items, state.values.scale, (k)=>{ state.values.scale = Number(k); updateScaleText(); }, (x)=>x.label, (x)=>x.i);
+}
+
+function updateScaleText(){
+  const bucket = state.lexicon.scaleBuckets[state.values.scale];
+  $('scaleText').textContent = bucket ? bucket.surface_prompt : '';
+}
+
+function setPitchYaw(pitch,yaw){
+  state.values.pitch = Math.max(-20, Math.min(60, Math.round(pitch)));
+  state.values.yaw = Math.max(-90, Math.min(90, Math.round(yaw)));
+  syncAnglePadFromState();
+}
+
+function syncAnglePadFromState(){
+  const x = ((state.values.yaw + 90)/180)*100;
+  const y = 100 - ((state.values.pitch + 20)/80)*100;
+  $('angleMarker').style.left = `${Math.max(0,Math.min(100,x))}%`;
+  $('angleMarker').style.top = `${Math.max(0,Math.min(100,y))}%`;
+  const dir = state.values.yaw >= 0 ? 'Right' : 'Left';
+  $('angleReadout').textContent = `Pitch ${state.values.pitch}° · Yaw ${dir} ${Math.abs(state.values.yaw)}°`;
+}
+
+function applyAnglePreset(id){
+  const p = OPTIONS.anglePresets.find(x=>x.id===id);
+  if (!p) return;
+  setPitchYaw(p.pitch, p.yaw);
+}
+
+function cameraPromptFromAngles(){
+  const p = state.values.pitch;
+  const y = state.values.yaw;
+  const elev = p >= 28 ? 'slightly elevated view' : p <= 0 ? 'slightly low-angle view' : 'eye-level view';
+  const az = Math.abs(y) < 12 ? 'frontal composition' : Math.abs(y) < 48 ? 'three-quarter composition' : 'side-oriented composition';
+  return `${elev}, ${az}`;
+}
+
+function getCurrent(){
+  const dna = state.lexicon.sceneDna[state.values.sceneDna];
+  const lens = OPTIONS.lenses.find(x=>x.id===state.values.lens);
+  const anchor = OPTIONS.anchors.find(x=>x.id===state.values.anchor);
+  const layout = OPTIONS.layouts.find(x=>x.id===state.values.layout);
+  const scale = state.lexicon.scaleBuckets[state.values.scale];
+  return {dna,lens,anchor,layout,scale};
+}
+
+function compilePrompt(){
+  const c = getCurrent();
+  const core = [
+    `${state.values.space} interior scene`,
+    `${state.values.time.toLowerCase()} lighting`,
+    `placement: ${state.values.placement}`,
+    `decor density: ${state.values.density.toLowerCase()}`,
+    `camera framing: ${state.values.distance.toLowerCase()}`,
+    `camera perspective: ${c.lens.cue}`,
+    `camera orientation: ${cameraPromptFromAngles()}`,
+    `scene palette: ${c.dna.palette}`,
+    `scene materials: ${c.dna.materials}`,
+    `scene lighting style: ${c.dna.lighting}`,
+    `scene grading: ${c.dna.grading}`,
+    `photography mood: ${c.dna.photography_vibe}`,
+    `spatial guidance: ${c.anchor.cue}`,
+    `layout guidance: ${c.layout.cue}`,
+    `support scale: ${c.scale.surface_prompt}`,
+    `clearance: ${$('keepout').value.trim()}`,
+    `scene intent: ${$('brandMoment').value.trim()}`
+  ];
+  return core.join(', ')
+    .replace(/\bproducts\b/gi,'subjects')
+    .replace(/\bproduct\b/gi,'subject');
+}
+
+function renderQuickChecks(prompt){
+  const checks = [
+    {ok: !/\bpitch\b|\byaw\b|°/i.test(prompt), msg:'No raw degree tokens in prompt'},
+    {ok: prompt.includes('camera orientation:') && prompt.includes('camera perspective:'), msg:'Model-friendly camera language'},
+    {ok: prompt.includes('spatial guidance:') && prompt.includes('layout guidance:'), msg:'Anchor/Layout mapped to prompt cues'}
+  ];
+  const root = $('quickChecks'); root.innerHTML='';
+  checks.forEach(c=>{ const d=document.createElement('div'); d.className=`chip ${c.ok?'ok':'bad'}`; d.textContent=`${c.ok?'PASS':'CHECK'} · ${c.msg}`; root.appendChild(d); });
+}
+
+function generate(){
+  const prompt = compilePrompt();
+  $('promptView').textContent = prompt;
+  renderQuickChecks(prompt);
+  state.logs.push({ts:new Date().toISOString(), space:state.values.space, placement:state.values.placement, lens:state.values.lens});
+  $('status').textContent = 'Prompt generated with model-friendly camera/layout wording.';
 }
 
 function savePreset(){
-  localStorage.setItem('prompt_builder_rebuild_v2_preset', JSON.stringify(getUiState()));
-  status.textContent = 'Preset saved.';
+  const data = {
+    values: state.values,
+    keepout: $('keepout').value,
+    brandMoment: $('brandMoment').value
+  };
+  localStorage.setItem('prompt_builder_rebuild_v2_preset', JSON.stringify(data));
+  $('status').textContent = 'Preset saved.';
 }
 
 function loadPreset(){
   const raw = localStorage.getItem('prompt_builder_rebuild_v2_preset');
-  if (!raw) { status.textContent = 'No preset saved yet.'; return; }
-  let saved;
-  try { saved = JSON.parse(raw); }
-  catch { status.textContent = 'Preset data is invalid.'; return; }
-
-  state.mode = saved.mode || 'SCENE_ONLY';
-  state.masterRatio = saved.masterRatio || '3:2';
-  state.customPlacements = saved.customPlacements || {};
-
-  setSegment('modeSeg', state.mode);
-  setSegment('ratioSeg', state.masterRatio);
-  ratioGuide.dataset.ratio = state.masterRatio;
-  productSec.classList.toggle('hidden', state.mode !== 'PRODUCT_IN_SCENE');
-
-  const form = saved.form || {};
-  room.value = form.room || room.value;
-  updatePlacementOptions();
-
-  const wantedPlacement = form.placement || placement.value;
-  if (wantedPlacement) {
-    const hasOption = [...placement.options].some(opt => opt.value === wantedPlacement);
-    if (!hasOption) {
-      if (!state.customPlacements[room.value]) state.customPlacements[room.value] = [];
-      state.customPlacements[room.value].push(wantedPlacement);
-      updatePlacementOptions();
-    }
-    placement.value = wantedPlacement;
+  if (!raw) { $('status').textContent='No preset saved yet.'; return; }
+  try {
+    const data = JSON.parse(raw);
+    state.values = { ...state.values, ...(data.values || {}) };
+    $('keepout').value = data.keepout || $('keepout').value;
+    $('brandMoment').value = data.brandMoment || $('brandMoment').value;
+    rerenderAll();
+    generate();
+    $('status').textContent = 'Preset loaded.';
+  } catch {
+    $('status').textContent = 'Preset data is invalid.';
   }
-
-  sceneDna.value = form.sceneDna || sceneDna.value;
-  propDensity.value = form.propDensity || propDensity.value;
-  timeOfDay.value = form.timeOfDay || timeOfDay.value;
-  mood.value = form.mood || mood.value;
-  pitch.value = form.pitch || pitch.value;
-  yaw.value = form.yaw || yaw.value;
-  distance.value = form.distance || distance.value;
-  lens.value = form.lens || lens.value;
-  anchor.value = form.anchor || anchor.value;
-  layout.value = form.layout || layout.value;
-  scaleSlider.value = form.scaleSlider || scaleSlider.value;
-  keepout.value = form.keepout || keepout.value;
-  brandMoment.value = form.brandMoment || brandMoment.value;
-
-  updateScaleText();
-  syncAnglePadFromInputs();
-  toggleProductPlacement();
-  generate();
-  status.textContent = 'Preset loaded.';
-}
-
-function exportLog(){
-  const lines = ['# Session Log', '', ...state.logs.map((log, idx)=>`- ${idx + 1}. ${log.ts} | mode=${log.mode} | ratio=${log.ratio} | gateFailCount=${log.gateFailCount}`)];
-  const blob = new Blob([lines.join('\n')], {type:'text/markdown'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'session_log.md';
-  a.click();
-  URL.revokeObjectURL(a.href);
-  status.textContent = 'Session log exported.';
 }
 
 function resetForm(){
-  localStorage.removeItem('prompt_builder_rebuild_v2_preset');
-  state.mode = 'SCENE_ONLY';
-  state.masterRatio = '3:2';
-  state.customPlacements = {};
-  setSegment('modeSeg', state.mode);
-  setSegment('ratioSeg', state.masterRatio);
-  ratioGuide.dataset.ratio = state.masterRatio;
-  room.value = 'living_room';
-  updatePlacementOptions();
-  sceneDna.selectedIndex = 0;
-  propDensity.value = 'medium';
-  timeOfDay.value = 'daytime';
-  mood.value = 'calm premium lifestyle';
-  pitch.value = 20;
-  yaw.value = 30;
-  distance.selectedIndex = 0;
-  lens.value = 35;
-  anchor.value = 'leave intentional negative space on center-right';
-  layout.value = 'clean contemporary interior layout with readable circulation';
-  scaleSlider.value = 1;
-  keepout.value = 'clear perimeter around hero subject';
-  brandMoment.value = 'composition prepared for later object compositing';
-  productSec.classList.add('hidden');
-  updateScaleText();
-  syncAnglePadFromInputs();
-  toggleProductPlacement();
-  gates.innerHTML = '';
-  specView.textContent = '';
-  promptView.textContent = '';
-  status.textContent = 'Form reset complete.';
+  state.values = { space:'living room', placement:'by the sofa', sceneDna:Object.keys(state.lexicon.sceneDna)[0], time:'Daytime', density:'Medium', distance:'Medium shot', lens:'wide', scale:1, pitch:20, yaw:30, anchor:'right third clear', layout:'asymmetry' };
+  $('keepout').value = 'clear perimeter around hero subject';
+  $('brandMoment').value = 'composition prepared for later object compositing';
+  rerenderAll();
+  $('promptView').textContent='';
+  $('quickChecks').innerHTML='';
+  $('status').textContent='Form reset complete.';
+}
+
+function exportLog(){
+  const lines = ['# Session Log','',...state.logs.map((x,i)=>`- ${i+1}. ${x.ts} | space=${x.space} | placement=${x.placement} | lens=${x.lens}`)];
+  const blob = new Blob([lines.join('\n')], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download='session_log.md'; a.click(); URL.revokeObjectURL(a.href);
+  $('status').textContent='Session log exported.';
 }
 
 function copyPrompt(){
-  const text = promptView.textContent || '';
-  if (!text) { status.textContent = 'No prompt to copy yet.'; return; }
-  navigator.clipboard.writeText(text)
-    .then(()=>{ status.textContent = 'Prompt copied to clipboard.'; })
-    .catch(()=>{ status.textContent = 'Clipboard copy failed.'; });
+  const t = $('promptView').textContent || '';
+  if (!t) { $('status').textContent='No prompt to copy yet.'; return; }
+  navigator.clipboard.writeText(t).then(()=>$('status').textContent='Prompt copied to clipboard.').catch(()=>$('status').textContent='Clipboard copy failed.');
 }
 
-function toggleProductPlacement(){
-  const enabled = state.mode === 'PRODUCT_IN_SCENE';
-  placementControls.classList.toggle('control-disabled', !enabled);
-  placementControls.querySelectorAll('select, input, button').forEach(el => { el.disabled = !enabled; });
+function rerenderAll(){
+  renderButtons('spaceSeg', OPTIONS.spaces, state.values.space, (k)=>{ state.values.space = k; rerenderAll(); }, x=>x.label, x=>x.id);
+  renderPlacementButtons();
+  renderButtons('sceneDnaSeg', Object.keys(state.lexicon.sceneDna), state.values.sceneDna, (k)=>{ state.values.sceneDna = k; rerenderSceneDna(); });
+  renderButtons('timeSeg', OPTIONS.times, state.values.time, (k)=>{ state.values.time=k; rerenderTime(); });
+  renderButtons('densitySeg', OPTIONS.density, state.values.density, (k)=>{ state.values.density=k; rerenderDensity(); });
+  renderButtons('distanceSeg', OPTIONS.distances, state.values.distance, (k)=>{ state.values.distance=k; rerenderDistance(); });
+  renderButtons('lensSeg', OPTIONS.lenses, state.values.lens, (k)=>{ state.values.lens=k; rerenderLens(); }, x=>x.label, x=>x.id);
+  renderScaleButtons();
+  renderButtons('anchorSeg', OPTIONS.anchors, state.values.anchor, (k)=>{ state.values.anchor=k; rerenderAnchor(); }, x=>x.label, x=>x.id);
+  renderButtons('layoutSeg', OPTIONS.layouts, state.values.layout, (k)=>{ state.values.layout=k; rerenderLayout(); }, x=>x.label, x=>x.id);
+  renderButtons('anglePresetSeg', OPTIONS.anglePresets, null, (k)=>{ applyAnglePreset(k); }, x=>x.label, x=>x.id);
+  syncAnglePadFromState();
 }
 
-function clamp(num, min, max){ return Math.max(min, Math.min(max, num)); }
-
-function syncAnglePadFromInputs(){
-  const x = ((Number(yaw.value) + 90) / 180) * 100;
-  const y = 100 - ((Number(pitch.value) + 20) / 80) * 100;
-  angleMarker.style.left = `${clamp(x, 0, 100)}%`;
-  angleMarker.style.top = `${clamp(y, 0, 100)}%`;
-}
-
-function setAngleFromPadPointer(clientX, clientY){
-  const rect = anglePad.getBoundingClientRect();
-  const nx = clamp((clientX - rect.left) / rect.width, 0, 1);
-  const ny = clamp((clientY - rect.top) / rect.height, 0, 1);
-  yaw.value = Math.round((nx * 180) - 90);
-  pitch.value = Math.round(((1 - ny) * 80) - 20);
-  syncAnglePadFromInputs();
-}
+function rerenderSceneDna(){ renderButtons('sceneDnaSeg', Object.keys(state.lexicon.sceneDna), state.values.sceneDna, (k)=>{ state.values.sceneDna = k; rerenderSceneDna(); }); }
+function rerenderTime(){ renderButtons('timeSeg', OPTIONS.times, state.values.time, (k)=>{ state.values.time=k; rerenderTime(); }); }
+function rerenderDensity(){ renderButtons('densitySeg', OPTIONS.density, state.values.density, (k)=>{ state.values.density=k; rerenderDensity(); }); }
+function rerenderDistance(){ renderButtons('distanceSeg', OPTIONS.distances, state.values.distance, (k)=>{ state.values.distance=k; rerenderDistance(); }); }
+function rerenderLens(){ renderButtons('lensSeg', OPTIONS.lenses, state.values.lens, (k)=>{ state.values.lens=k; rerenderLens(); }, x=>x.label, x=>x.id); }
+function rerenderAnchor(){ renderButtons('anchorSeg', OPTIONS.anchors, state.values.anchor, (k)=>{ state.values.anchor=k; rerenderAnchor(); }, x=>x.label, x=>x.id); }
+function rerenderLayout(){ renderButtons('layoutSeg', OPTIONS.layouts, state.values.layout, (k)=>{ state.values.layout=k; rerenderLayout(); }, x=>x.label, x=>x.id); }
 
 function bind(){
-  modeSeg.addEventListener('click', (e)=>{
-    if (!e.target.dataset.value) return;
-    state.mode = e.target.dataset.value;
-    setSegment('modeSeg', state.mode);
-    productSec.classList.toggle('hidden', state.mode !== 'PRODUCT_IN_SCENE');
-    toggleProductPlacement();
-  });
-
-  ratioSeg.addEventListener('click', (e)=>{
-    if (!e.target.dataset.value) return;
-    state.masterRatio = e.target.dataset.value;
-    setSegment('ratioSeg', state.masterRatio);
-    ratioGuide.dataset.ratio = state.masterRatio;
-  });
-
-  room.addEventListener('change', updatePlacementOptions);
-  addPlacement.addEventListener('click', addCustomPlacement);
-  scaleSlider.addEventListener('input', updateScaleText);
-  generateBtn.addEventListener('click', generate);
-  savePresetBtn.addEventListener('click', savePreset);
-  loadPresetBtn.addEventListener('click', loadPreset);
-  exportLogBtn.addEventListener('click', exportLog);
-  resetBtn.addEventListener('click', resetForm);
-  copyPromptBtn.addEventListener('click', copyPrompt);
-
-  pitch.addEventListener('input', syncAnglePadFromInputs);
-  yaw.addEventListener('input', syncAnglePadFromInputs);
+  $('generateBtn').addEventListener('click', generate);
+  $('copyPromptBtn').addEventListener('click', copyPrompt);
+  $('exportLogBtn').addEventListener('click', exportLog);
+  $('savePresetBtn').addEventListener('click', savePreset);
+  $('loadPresetBtn').addEventListener('click', loadPreset);
+  $('resetBtn').addEventListener('click', resetForm);
 
   let dragging = false;
-  anglePad.addEventListener('pointerdown', (e)=>{ dragging = true; setAngleFromPadPointer(e.clientX, e.clientY); anglePad.setPointerCapture(e.pointerId); });
-  anglePad.addEventListener('pointermove', (e)=>{ if (!dragging) return; setAngleFromPadPointer(e.clientX, e.clientY); });
-  anglePad.addEventListener('pointerup', ()=>{ dragging = false; });
+  const pad = $('anglePad');
+  pad.addEventListener('pointerdown', (e)=>{ dragging=true; setFromPad(e); pad.setPointerCapture(e.pointerId); });
+  pad.addEventListener('pointermove', (e)=>{ if (!dragging) return; setFromPad(e); });
+  pad.addEventListener('pointerup', ()=>{ dragging=false; });
+  function setFromPad(e){
+    const r = pad.getBoundingClientRect();
+    const nx = Math.max(0, Math.min(1, (e.clientX-r.left)/r.width));
+    const ny = Math.max(0, Math.min(1, (e.clientY-r.top)/r.height));
+    setPitchYaw(((1-ny)*80)-20, (nx*180)-90);
+  }
 }
 
 (async function init(){
   await loadLexicons();
-  populateBasics();
+  state.values.sceneDna = Object.keys(state.lexicon.sceneDna)[0];
   bind();
-  toggleProductPlacement();
-  syncAnglePadFromInputs();
+  rerenderAll();
+  updateScaleText();
 })();
 </script>
 </body>
