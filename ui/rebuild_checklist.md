@@ -1,21 +1,21 @@
-# Rebuild Validation Checklist
+# Rebuild Validation Checklist (v3 workflow)
 
-## Phase 1: 기준 기능
-- [x] Lexicon 로드 성공
-- [x] Generate 클릭 시 Spec/Prompt 갱신
-- [x] Gate Status 렌더링
+## Phase 1: 핵심 워크플로우 동작
+- [x] 공간/스타일/앵글 옵션 버튼 선택 동작
+- [x] Generate 클릭 시 출력창 프롬프트 생성
+- [x] Copy 클릭 시 클립보드 복사 시도 및 상태 메시지 표시
+- [x] Reset 클릭 시 입력/출력 초기화
 
-## Phase 2: 상태/입출력 안정화
-- [x] 중복 ID 없는 액션 버튼 구조
-- [x] Save Preset / Load Preset 동작
-- [x] Reset 동작
-- [x] Session Log Export 동작
+## Phase 2: 사용성/속도
+- [x] 선택-생성-복사 3단계 흐름이 단일 화면에서 완료
+- [x] 추가 요청 입력이 프롬프트에 반영
+- [x] 첫 결과 생성 90초 이내 목표를 UI에 명시
 
-## Phase 3: UX 보강
-- [x] PRODUCT_IN_SCENE 전환 시 placement controls 활성화
-- [x] angle pad ↔ pitch/yaw 동기화
-- [x] 반응형(1200px 이하 단일 컬럼) 레이아웃 유지
+## Phase 3: 반응형/안정성
+- [x] 980px 이하에서 단일 컬럼으로 전환
+- [x] 주요 액션 버튼이 화면 내 우선 노출
+- [x] 상태 메시지가 사용자 다음 행동을 안내
 
 ## 알려진 제약
-- `file://` 직접 실행 시 `fetch('../lexicon/*.yml')`가 브라우저 정책으로 실패할 수 있음.
-- 로컬 서버로 실행 권장 (`python3 -m http.server`).
+- 일부 브라우저/보안 컨텍스트에서 clipboard API가 제한될 수 있음.
+- 현재 v3는 간소화 우선 버전으로, lexicon 기반 상세 규칙 연결은 다음 단계에서 통합한다.
