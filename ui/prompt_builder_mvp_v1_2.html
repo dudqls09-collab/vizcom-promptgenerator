@@ -221,13 +221,14 @@
         <button onclick="copyText('revPrompt')">Copy Revision</button>
       </section>
 
-      <section class="panel">
-        <h2>Scene Spec / Validation</h2>
-        <div class="chips" id="gates"></div>
-        <pre id="specView"></pre>
-        <h2>세션 메모</h2>
-        <textarea id="notes" placeholder="왜 pass/fail 인지, 다음 수정 포인트를 짧게 기록"></textarea>
-      </section>
+    <section class="panel">
+      <h3>Current Surface Prompt</h3>
+      <div class="prompt-actions">
+        <button id="generate" type="button">Generate Prompt</button>
+        <button id="savePreset" type="button">Save Preset</button>
+        <button id="loadPreset" type="button">Load Preset</button>
+      </div>
+      <pre id="promptView"></pre>
     </section>
   </div>
 
@@ -735,95 +736,135 @@ function addChip(text, type){
 function setStatus(msg, type='ok'){ status.className = type; status.textContent = msg; }
 
 function generate(){
-  let spec = getState();
-  console.debug('[generate] current-ui-state', spec);
-  const result = validateSpec(spec);
-  if (result.errors.length){
-    renderGates({ ...result, lintHits: [] });
-    setStatus('생성 차단: Validation 오류를 먼저 수정하세요.', 'err');
-    return;
-  }
-
-  spec = injectBrandGuard(spec);
-  const prompt = composePrompt(spec);
-
-  const lintInputs = [prompt.gen, prompt.neg, prompt.rev];
-  const lintHits = lintInputs.flatMap((text)=> lintSurface(text).hits);
-  renderGates({ ...result, lintHits });
-
-  if (lintHits.length){
-    setStatus(`생성 차단: reserved token 누출(${lintHits.join(', ')})`, 'err');
-    return;
-  }
-
-  specView.textContent = JSON.stringify(spec, null, 2);
-  genPrompt.textContent = prompt.gen;
-  negPrompt.textContent = prompt.neg;
-  revPrompt.textContent = prompt.rev;
-  localStorage.setItem('currentSpec', JSON.stringify(spec));
-  localStorage.setItem('lastPromptBundle', JSON.stringify({ spec, prompt, generatedAt: new Date().toISOString() }));
-  setStatus('프롬프트 생성 완료.', 'ok');
+  const spec = getSpec();
+  const prompt = compilePrompt(spec);
+  renderGates(runGates(spec, prompt));
+  document.getElementById('specView').textContent = JSON.stringify(spec, null, 2);
+  document.getElementById('promptView').textContent = prompt;
+  document.getElementById('status').textContent = 'Generated from latest Spec.';
 }
 
-function copyText(id){
-  navigator.clipboard.writeText(document.getElementById(id).textContent || '').then(()=>setStatus('복사 완료', 'ok'));
+function getUiState(){
+  return {
+    mode: state.mode,
+    masterRatio: state.masterRatio,
+    customPlacements: state.customPlacements,
+    form: {
+      room: document.getElementById('room').value,
+      placement: document.getElementById('placement').value,
+      sceneDna: document.getElementById('sceneDna').value,
+      propDensity: document.getElementById('propDensity').value,
+      timeOfDay: document.getElementById('timeOfDay').value,
+      mood: document.getElementById('mood').value,
+      pitch: document.getElementById('pitch').value,
+      yaw: document.getElementById('yaw').value,
+      distance: document.getElementById('distance').value,
+      lens: document.getElementById('lens').value,
+      anchor: document.getElementById('anchor').value,
+      layout: document.getElementById('layout').value,
+      scaleSlider: document.getElementById('scaleSlider').value,
+      keepout: document.getElementById('keepout').value,
+      brandMoment: document.getElementById('brandMoment').value
+    }
+  };
 }
 
 function savePreset(){
-  localStorage.setItem('preset_v1', JSON.stringify(getState()));
-  setStatus('Preset 저장 완료', 'ok');
+  localStorage.setItem('prompt_builder_v1_2_preset', JSON.stringify(getUiState()));
+  document.getElementById('status').textContent = 'Preset saved.';
 }
+
 function loadPreset(){
-  const raw = localStorage.getItem('preset_v1');
-  if (!raw){ setStatus('저장된 preset이 없습니다.', 'warn'); return; }
-  const s = JSON.parse(raw);
-  const loadedRoom = s.scene.room_code || s.scene.room;
-  if (loadedRoom && !document.querySelector(`#roomSeg button[data-value=\"${loadedRoom}\"]`)) {
-    CUSTOM_VALUES.rooms.add(loadedRoom);
-    document.getElementById('roomSeg').insertAdjacentHTML('beforeend', `<button type=\"button\" data-value=\"${loadedRoom}\">${loadedRoom}</button>`);
-    document.querySelector(`#roomSeg button[data-value=\"${loadedRoom}\"]`)
-      .addEventListener('click', ()=> { setSegmentValue('room', loadedRoom); refreshPlacementOptions(); });
+  const raw = localStorage.getItem('prompt_builder_v1_2_preset');
+  if (!raw) {
+    document.getElementById('status').textContent = 'No preset saved yet.';
+    return;
   }
-  setSegmentValue('room', loadedRoom);
-  refreshPlacementOptions();
-  setSegmentValue('time', s.scene.time_code || s.scene.time);
-  setSegmentValue('mood', s.scene.mood_code || s.scene.mood);
-  pitch.value=s.camera.pitch; yaw.value=String(s.camera.yaw);
-  setSegmentValue('distance', s.camera.distance_code || s.camera.distance);
-  setSegmentValue('lens', s.camera.lens_code || s.camera.lens);
-  const loadedLength = Number(s.product.length_cm);
-  const idx = LENGTH_BUCKETS.findIndex(b => b.value_cm === loadedLength);
-  lengthSlider.value = String(idx >= 0 ? idx : 1);
-  updateLengthLabel();
-  placement.dataset.prevValue = s.product.placement_code || s.product.placement;
-  refreshPlacementOptions();
-  setSegmentValue('keepout', s.product.keep_out);
-  setSegmentValue('density', s.props.density);
-  setSegmentValue('masterRatio', s.output.master_ratio);
-  derivativeSeg.querySelectorAll('button').forEach(btn => {
-    btn.classList.toggle('active', s.output.derivatives.includes(btn.dataset.ratio));
+
+  let saved;
+  try {
+    saved = JSON.parse(raw);
+  } catch {
+    document.getElementById('status').textContent = 'Preset data is invalid.';
+    return;
+  }
+
+  state.mode = saved.mode || 'SCENE_ONLY';
+  state.masterRatio = saved.masterRatio || '3:2';
+  state.customPlacements = saved.customPlacements || {};
+
+  setSegment('modeSeg', state.mode);
+  setSegment('ratioSeg', state.masterRatio);
+  document.getElementById('ratioGuide').dataset.ratio = state.masterRatio;
+  document.getElementById('productSec').classList.toggle('hidden', state.mode !== 'PRODUCT_IN_SCENE');
+
+  const form = saved.form || {};
+  document.getElementById('room').value = form.room || document.getElementById('room').value;
+  updatePlacementOptions();
+
+  const placementEl = document.getElementById('placement');
+  const wantedPlacement = form.placement || placementEl.value;
+  if (wantedPlacement) {
+    const hasOption = [...placementEl.options].some(opt => opt.value === wantedPlacement);
+    if (!hasOption) {
+      const room = document.getElementById('room').value;
+      if (!state.customPlacements[room]) state.customPlacements[room] = [];
+      if (!state.customPlacements[room].includes(wantedPlacement)) {
+        state.customPlacements[room].push(wantedPlacement);
+      }
+      updatePlacementOptions();
+    }
+    placementEl.value = wantedPlacement;
+  }
+
+  document.getElementById('sceneDna').value = form.sceneDna || document.getElementById('sceneDna').value;
+  document.getElementById('propDensity').value = form.propDensity || document.getElementById('propDensity').value;
+  document.getElementById('timeOfDay').value = form.timeOfDay || document.getElementById('timeOfDay').value;
+  document.getElementById('mood').value = form.mood || document.getElementById('mood').value;
+  document.getElementById('pitch').value = form.pitch || document.getElementById('pitch').value;
+  document.getElementById('yaw').value = form.yaw || document.getElementById('yaw').value;
+  document.getElementById('distance').value = form.distance || document.getElementById('distance').value;
+  document.getElementById('lens').value = form.lens || document.getElementById('lens').value;
+  document.getElementById('anchor').value = form.anchor || document.getElementById('anchor').value;
+  document.getElementById('layout').value = form.layout || document.getElementById('layout').value;
+  document.getElementById('scaleSlider').value = form.scaleSlider || document.getElementById('scaleSlider').value;
+  document.getElementById('keepout').value = form.keepout || document.getElementById('keepout').value;
+  document.getElementById('brandMoment').value = form.brandMoment || document.getElementById('brandMoment').value;
+
+  updateScaleText();
+  toggleProductPlacement();
+  generate();
+  document.getElementById('status').textContent = 'Preset loaded.';
+}
+
+function bind(){
+  document.getElementById('modeSeg').addEventListener('click', (e)=>{
+    if (!e.target.dataset.value) return;
+    state.mode = e.target.dataset.value;
+    setSegment('modeSeg', state.mode);
+    document.getElementById('productSec').classList.toggle('hidden', state.mode !== 'PRODUCT_IN_SCENE');
+    toggleProductPlacement();
   });
-  if (!getSelectedDerivatives().length) derivativeSeg.querySelector('button')?.classList.add('active');
-  updateRatioPreview();
-  syncAnglePadFromInputs();
-  setStatus('Preset 불러오기 완료', 'ok');
+  document.getElementById('ratioSeg').addEventListener('click', (e)=>{
+    if (!e.target.dataset.value) return;
+    state.masterRatio = e.target.dataset.value;
+    setSegment('ratioSeg', state.masterRatio);
+    document.getElementById('ratioGuide').dataset.ratio = state.masterRatio;
+  });
+  document.getElementById('room').addEventListener('change', updatePlacementOptions);
+  document.getElementById('addPlacement').addEventListener('click', addCustomPlacement);
+  document.getElementById('scaleSlider').addEventListener('input', updateScaleText);
+  document.getElementById('generate').addEventListener('click', generate);
+  document.getElementById('savePreset').addEventListener('click', savePreset);
+  document.getElementById('loadPreset').addEventListener('click', loadPreset);
 }
 
-function logResult(pass){
-  const spec = JSON.parse(localStorage.getItem('currentSpec') || 'null');
-  if (!spec){ setStatus('먼저 Generate를 실행하세요.', 'warn'); return; }
-  logs.push({ time: new Date().toISOString(), pass, notes: notes.value.trim(), spec });
-  setStatus(pass ? 'Pass 기록됨' : 'Fail 기록됨', pass ? 'ok' : 'warn');
-}
-
-function exportLog(){
-  if (!logs.length){ setStatus('내보낼 로그가 없습니다.', 'warn'); return; }
-  let md = '# Session Log\n\n';
-  logs.forEach((l,i)=>{
-    md += `## ${i+1}. ${l.pass?'PASS':'FAIL'} - ${l.time}\n`;
-    md += `- notes: ${l.notes || '(none)'}\n`;
-    md += `- scene: ${l.spec.scene.room_code}/${l.spec.scene.time_code}/${l.spec.scene.mood_code} -> ${l.spec.scene.room_desc}/${l.spec.scene.time_desc}/${l.spec.scene.mood_desc}\n`;
-    md += `- camera: pitch ${l.spec.camera.pitch}, yaw ${l.spec.camera.yaw}, ${l.spec.camera.distance_code} (${l.spec.camera.distance_desc})\n\n`;
+function toggleProductPlacement(){
+  const enabled = state.mode === 'PRODUCT_IN_SCENE';
+  const controls = document.getElementById('placementControls');
+  controls.classList.toggle('control-disabled', !enabled);
+  controls.querySelectorAll('select, input, button').forEach(el => {
+    el.disabled = !enabled;
   });
   const blob = new Blob([md], {type:'text/markdown'});
   const a = document.createElement('a');
