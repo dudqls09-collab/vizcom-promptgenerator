@@ -1,7 +1,7 @@
 scale_surface:
-  portable: "compact carry-friendly speaker, tabletop scale"
-  onyx_class: "compact tabletop home speaker, approx 28–32cm tall, single hero product"
-  tower: "tall floorstanding home speaker, approx 90–120cm tall, single hero product"
+  portable: "compact carry-friendly tabletop proportion"
+  onyx_class: "compact tabletop support proportion, approx 28–32cm reference height"
+  tower: "tall floor-near-furniture proportion, approx 90–120cm reference height"
 
 room_surface:
   living_room: "living room"
@@ -36,6 +36,6 @@ placement_surface:
   floor_near_wall: "on the floor near a wall"
 
 keepout_surface:
-  small: "small keep-out zone"
-  medium: "medium keep-out zone with clear negative space around the product"
-  large: "large keep-out zone with generous negative space around the product"
+  small: "small staging clearance zone"
+  medium: "medium staging clearance with clear negative space"
+  large: "large staging clearance with generous negative space"
