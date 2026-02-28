@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Prompt Sprint Builder v3</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #131a2c;
+      --line: #24304a;
+      --txt: #eef3ff;
+      --sub: #a2aecb;
+      --acc: #68a6ff;
+      --ok: #19c37d;
+    }
+    * { box-sizing: border-box; font-family: Inter, Pretendard, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { margin: 0; background: radial-gradient(circle at top, #14203b, #0b1020 52%); color: var(--txt); }
+    .app { max-width: 1280px; margin: 0 auto; padding: 20px; display: grid; gap: 14px; }
+    .hero, .panel { background: color-mix(in oklab, var(--panel) 92%, black); border: 1px solid var(--line); border-radius: 14px; }
+    .hero { padding: 18px; }
+    h1 { margin: 0; font-size: 22px; }
+    .sub { color: var(--sub); font-size: 13px; margin-top: 6px; }
+    .grid { display: grid; grid-template-columns: 1.3fr .7fr; gap: 14px; }
+    .panel { padding: 14px; }
+    h2 { font-size: 15px; margin: 0 0 10px; }
+    .stepper { display: flex; gap: 8px; margin-bottom: 10px; }
+    .step { flex: 1; border: 1px solid #2f3e61; border-radius: 999px; color: var(--sub); font-size: 12px; text-align: center; padding: 7px; }
+    .step.active { color: var(--txt); border-color: var(--acc); background: #1a2a4a; }
+    .section { border: 1px solid #24324f; border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+    .section-title { font-size: 13px; color: #cfddff; margin-bottom: 8px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { border: 1px solid #3b4d75; background: #111a2d; color: #dce6ff; border-radius: 999px; padding: 7px 12px; font-size: 12px; cursor: pointer; }
+    .chip.active { background: #20365f; border-color: #7fafff; }
+    .chip.input-chip { display: flex; gap: 6px; align-items: center; }
+    input[type="text"] { width: 100%; background: #111a2d; color: var(--txt); border: 1px solid #35466b; border-radius: 8px; padding: 9px; }
+    textarea { width: 100%; min-height: 160px; background: #0f1628; color: var(--txt); border: 1px solid #2f3f63; border-radius: 10px; padding: 12px; resize: vertical; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    button { border: 1px solid #3b4c74; border-radius: 10px; background: #121c31; color: var(--txt); padding: 10px; cursor: pointer; }
+    button.primary { border-color: #7eaefb; background: #1d325a; }
+    button:hover { border-color: var(--acc); }
+    .kpi { font-size: 12px; color: #8fc6ff; margin-top: 10px; }
+    .flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .flow li { padding: 10px; border: 1px dashed #35507d; border-radius: 8px; color: var(--sub); font-size: 12px; }
+    .flow b { color: #dce8ff; }
+    .status { margin-top: 8px; font-size: 12px; color: #9ebeff; min-height: 18px; }
+    @media (max-width: 980px) {
+      .grid, .actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <h1>Prompt Sprint Builder v3</h1>
+      <div class="sub">실무자가 버튼 몇 번만 눌러 프롬프트 생성 → 복사 → 생성형 플랫폼에서 즉시 제작하는 초고속 워크플로우</div>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>3-Step 워크플로우</h2>
+        <div class="stepper">
+          <div class="step active">1. 옵션 선택</div>
+          <div class="step active">2. 프롬프트 생성</div>
+          <div class="step active">3. 복사 후 제작</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">공간 선택</div>
+          <div id="spaceChips" class="chips"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">스타일 선택</div>
+          <div id="styleChips" class="chips"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">구도/앵글 선택</div>
+          <div id="angleChips" class="chips"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">추가 요청 (옵션)</div>
+          <input id="extraInput" type="text" placeholder="예: 식물은 최소화, 전체 톤은 따뜻하게" />
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="generateBtn" type="button">프롬프트 생성</button>
+          <button id="copyBtn" type="button">복사</button>
+          <button id="resetBtn" type="button">초기화</button>
+        </div>
+        <div id="status" class="status"></div>
+      </article>
+
+      <aside class="panel">
+        <h2>출력</h2>
+        <textarea id="output" placeholder="생성 버튼을 누르면 프롬프트가 여기에 생성됩니다."></textarea>
+        <div class="kpi">목표 KPI: 첫 결과 생성까지 90초 이내 · 수정 반복 2회 이하</div>
+
+        <h2 style="margin-top:14px;">권장 운영 플로우</h2>
+        <ul class="flow">
+          <li><b>빠른 선택:</b> 공간/스타일/앵글 버튼 3세트만 선택</li>
+          <li><b>생성:</b> Generate 클릭으로 즉시 표준 프롬프트 생성</li>
+          <li><b>복사:</b> Copy 클릭 후 외부 생성형 플랫폼에 붙여넣기</li>
+          <li><b>개선:</b> 결과가 아쉬우면 옵션 한 가지씩만 수정해 재생성</li>
+        </ul>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const OPTIONS = {
+      space: ['거실', '침실', '다이닝', '주방', '홈오피스', '현관'],
+      style: ['모던 미니멀', '코지 내추럴', '럭셔리', '빈티지', '스칸디'],
+      angle: ['정면 아이레벨', '사선 아이레벨', '사선 하이앵글', '사선 로우앵글']
+    };
+
+    const state = {
+      space: OPTIONS.space[0],
+      style: OPTIONS.style[0],
+      angle: OPTIONS.angle[0]
+    };
+
+    function makeChipGroup(containerId, values, key) {
+      const container = document.getElementById(containerId);
+      values.forEach((value) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip';
+        btn.textContent = value;
+        if (value === state[key]) btn.classList.add('active');
+        btn.addEventListener('click', () => {
+          state[key] = value;
+          [...container.children].forEach((el) => el.classList.remove('active'));
+          btn.classList.add('active');
+          setStatus(`${key} 옵션이 '${value}'로 변경되었습니다.`);
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function buildPrompt() {
+      const extra = document.getElementById('extraInput').value.trim();
+      const base = [
+        `A high-quality interior visualization of a ${state.space.toLowerCase()} scene,`,
+        `${state.style.toLowerCase()} styling,`,
+        `${state.angle.toLowerCase()} composition,`,
+        `clean spatial readability, object-ready negative space, photorealistic lighting and materials.`
+      ].join(' ');
+      return extra ? `${base} Additional direction: ${extra}.` : base;
+    }
+
+    function setStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', () => {
+      const prompt = buildPrompt();
+      document.getElementById('output').value = prompt;
+      setStatus('프롬프트가 생성되었습니다. 복사 후 생성형 플랫폼에서 제작을 진행하세요.');
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const output = document.getElementById('output').value.trim();
+      if (!output) {
+        setStatus('먼저 프롬프트를 생성해주세요.');
+        return;
+      }
+      await navigator.clipboard.writeText(output);
+      setStatus('복사 완료. 생성형 플랫폼에 붙여넣어 제작하세요.');
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      document.getElementById('extraInput').value = '';
+      document.getElementById('output').value = '';
+      setStatus('입력을 초기화했습니다.');
+    });
+
+    makeChipGroup('spaceChips', OPTIONS.space, 'space');
+    makeChipGroup('styleChips', OPTIONS.style, 'style');
+    makeChipGroup('angleChips', OPTIONS.angle, 'angle');
+  </script>
+</body>
+</html>
