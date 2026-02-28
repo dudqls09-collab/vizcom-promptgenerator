@@ -1,0 +1,11 @@
+reserved_tokens:
+  - "onyx_class"
+  - "portable"
+  - "tower"
+  - "brand lock"
+  - "http://"
+  - "https://"
+patterns:
+  - "\\b\\w+_class\\b"
+  - "\\bSKU\\b"
+  - "\\bmodel\\s*no\\.?\\b"

@@ -1,0 +1,41 @@
+scale_surface:
+  portable: "compact carry-friendly speaker, tabletop scale"
+  onyx_class: "compact tabletop home speaker, approx 28–32cm tall, single hero product"
+  tower: "tall floorstanding home speaker, approx 90–120cm tall, single hero product"
+
+room_surface:
+  living_room: "living room"
+  bedroom: "bedroom"
+  study: "study room"
+  dining: "dining room"
+
+time_surface:
+  day: "daytime"
+  evening: "evening"
+  night: "night"
+
+mood_surface:
+  minimal_warm: "minimal warm"
+  modern_luxury: "modern luxury"
+  cozy_family: "cozy family"
+
+distance_surface:
+  close: "close"
+  medium: "medium"
+  wide: "wide"
+
+lens_surface:
+  "24-35": "24-35"
+  "35-50": "35-50"
+  "50-70": "50-70"
+
+placement_surface:
+  side_table: "on a side table"
+  tv_console: "on a TV console"
+  shelf: "on a shelf"
+  floor_near_wall: "on the floor near a wall"
+
+keepout_surface:
+  small: "small keep-out zone"
+  medium: "medium keep-out zone with clear negative space around the product"
+  large: "large keep-out zone with generous negative space around the product"
