@@ -11,69 +11,64 @@
     header { padding:14px 18px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
     h1 { margin:0; font-size:18px; }
     .meta { color:var(--muted); font-size:12px; }
-    .wrap { display:grid; grid-template-columns: 380px 1fr 1fr; gap:12px; padding:12px; min-height: calc(100vh - 56px); }
-    .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; overflow:auto; }
+
+    .wrap { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(360px,1fr); gap:12px; padding:12px; min-height: calc(100vh - 56px); }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; }
     .panel h2 { margin:0 0 8px; font-size:14px; }
+    .left-head, .right-head { margin-bottom:10px; }
+    .left-head p, .right-head p { margin:4px 0 0; color:var(--muted); font-size:12px; }
+
+    .controls-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .sec { border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px; }
+    .controls-grid .sec { margin-bottom:0; }
     .sec h3 { margin:0 0 8px; font-size:13px; color:#d8def0; }
+
     label { display:block; font-size:12px; color:var(--muted); margin:8px 0 6px; }
     input, textarea, button { width:100%; background:#12151b; color:var(--text); border:1px solid #303747; border-radius:8px; padding:8px; font-size:13px; }
     textarea { min-height:100px; resize:vertical; }
+    button { cursor:pointer; }
+    button:hover { border-color:var(--accent); }
+
+    .seg { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+    .seg button { padding:7px 6px; font-size:12px; }
+    .seg button.active { background:#1e2d4d; border-color:#5c7ecf; color:#dce8ff; }
+    .seg button:disabled { opacity:0.4; cursor:not-allowed; }
+    .seg.seg-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .seg.seg-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+
     .inline { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .chips { display:flex; flex-wrap:wrap; gap:6px; }
     .chip { padding:4px 8px; border-radius:999px; font-size:11px; border:1px solid #39445d; background:#151c2b; }
-    .chip.bad { border-color: #6d2b35; background:#2a1418; color:#ffadb7; }
-    .chip.ok { border-color: #1f5a43; background:#11251d; color:#96f0c8; }
-    .btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
-    .btns3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:8px; }
-    button { cursor:pointer; }
-    button:hover { border-color:var(--accent); }
+    .chip.bad { border-color:#6d2b35; background:#2a1418; color:#ffadb7; }
+    .chip.ok { border-color:#1f5a43; background:#11251d; color:#96f0c8; }
     .warn { color:var(--warn); font-size:12px; margin-top:6px; }
     .err { color:var(--bad); font-size:12px; margin-top:6px; }
     .ok { color:var(--ok); font-size:12px; margin-top:6px; }
     pre { white-space:pre-wrap; word-break:break-word; background:#11141a; border:1px solid #2b3342; border-radius:8px; padding:10px; font-size:12px; margin:8px 0; }
 
-    .seg { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
-    .seg button { padding:7px 6px; font-size:12px; }
-    .seg button.active { background:#1e2d4d; border-color:#5c7ecf; color:#dce8ff; }
-    .seg.seg-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .seg.seg-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
-
     .angle-tools { display:grid; gap:6px; }
     .angle-pad-wrap { border:1px solid #33405a; border-radius:10px; background:#121826; padding:8px; }
-    .angle-pad {
-      position:relative;
-      width:100%;
-      aspect-ratio:1/1;
-      border:1px solid #3b4b6f;
-      border-radius:8px;
-      background:
-        linear-gradient(to right, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%),
-        linear-gradient(to bottom, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%),
-        #0f1522;
-      cursor:grab;
-      touch-action:none;
-    }
+    .angle-pad { position:relative; width:100%; aspect-ratio:1/1; border:1px solid #3b4b6f; border-radius:8px; background:linear-gradient(to right, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%), linear-gradient(to bottom, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%), #0f1522; cursor:grab; touch-action:none; }
     .angle-pad.dragging { cursor:grabbing; }
-    .angle-marker {
-      position:absolute;
-      width:14px;
-      height:14px;
-      border-radius:999px;
-      border:2px solid #dce8ff;
-      background:#7aa2ff;
-      transform:translate(-50%, -50%);
-      box-shadow:0 0 0 3px rgba(122,162,255,0.2);
-      pointer-events:none;
-    }
+    .angle-marker { position:absolute; width:14px; height:14px; border-radius:999px; border:2px solid #dce8ff; background:#7aa2ff; transform:translate(-50%, -50%); box-shadow:0 0 0 3px rgba(122,162,255,0.2); pointer-events:none; }
     .angle-hint { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; margin-top:4px; }
     .angle-row { display:grid; grid-template-columns:76px 1fr; gap:6px; align-items:center; }
     .nudge { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
     .nudge button, .preset-angle button { padding:6px; font-size:12px; }
     .preset-angle { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:6px; }
+
     .custom-add { display:grid; grid-template-columns:1fr 84px; gap:6px; margin-top:6px; }
     .preview-frame { width:100%; border:1px dashed #3b4b6f; border-radius:10px; background:#0f1522; display:grid; place-items:center; color:var(--muted); font-size:12px; }
     .preview-frame .inner { width:84%; height:84%; border:1px solid #445680; border-radius:8px; display:grid; place-items:center; }
+    .btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+    .btns3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:8px; }
+
+    .right-col { display:grid; gap:12px; }
+
+    @media (max-width: 1200px) {
+      .wrap { grid-template-columns:1fr; }
+      .controls-grid { grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
@@ -81,191 +76,158 @@
     <h1>프롬프트 제조 UI MVP v1.1 (Compiler + Lexicon + Lint)</h1>
     <div class="meta">Spec↔Surface 분리 · Reserved Token Lint Gate</div>
   </header>
+
   <div class="wrap">
     <section class="panel" id="controls">
-      <h2>1) 옵션 선택</h2>
-      <div class="sec">
-        <h3>Scene</h3>
-        <label>Room</label>
-        <select id="room">
-          <option value="living_room">living_room</option>
-          <option value="bedroom">bedroom</option>
-          <option value="study">study</option>
-          <option value="dining">dining</option>
-        </select>
-        <div class="custom-add">
-          <input id="customRoom" placeholder="직접 입력 room type" />
-          <button id="addRoom" type="button">적용</button>
-        </div>
-
-        <label>Time</label>
-        <div class="seg seg-2" data-input="time">
-          <button type="button" data-value="day">day</button>
-          <button type="button" data-value="evening">evening</button>
-          <button type="button" data-value="night">night</button>
-        </div>
-        <input type="hidden" id="time" value="evening" />
-
-        <label>Mood</label>
-        <div class="seg" data-input="mood">
-          <button type="button" data-value="minimal_warm">minimal_warm</button>
-          <button type="button" data-value="modern_luxury">modern_luxury</button>
-          <button type="button" data-value="cozy_family">cozy_family</button>
-        </div>
-        <input type="hidden" id="mood" value="minimal_warm" />
+      <div class="left-head">
+        <h2>옵션 선택 / 조작부</h2>
+        <p>모든 핵심 옵션을 버튼으로 항상 노출하고, 클릭 1회로 변경되도록 구성했습니다.</p>
       </div>
 
-      <div class="sec">
-        <h3>Camera (빠른 의도 입력)</h3>
-        <label>Angle Pad (드래그로 Pitch/Yaw 동시 제어 · 5도 스냅)</label>
-        <div class="angle-tools">
-          <div class="angle-pad-wrap">
-            <div id="anglePad" class="angle-pad" aria-label="camera-angle-pad" tabindex="0">
-              <div id="angleMarker" class="angle-marker"></div>
+      <div class="controls-grid">
+        <div class="sec">
+          <h3>Scene</h3>
+          <label>Room</label>
+          <div class="seg seg-2" data-input="room" id="roomSeg">
+            <button type="button" data-value="living_room">living_room</button>
+            <button type="button" data-value="bedroom">bedroom</button>
+            <button type="button" data-value="study">study</button>
+            <button type="button" data-value="dining">dining</button>
+          </div>
+          <input type="hidden" id="room" value="living_room" />
+          <div class="custom-add">
+            <input id="customRoom" placeholder="직접 입력 room type" />
+            <button id="addRoom" type="button">적용</button>
+          </div>
+
+          <label>Time</label>
+          <div class="seg seg-2" data-input="time">
+            <button type="button" data-value="day">day</button>
+            <button type="button" data-value="evening">evening</button>
+            <button type="button" data-value="night">night</button>
+          </div>
+          <input type="hidden" id="time" value="evening" />
+
+          <label>Mood</label>
+          <div class="seg" data-input="mood">
+            <button type="button" data-value="minimal_warm">minimal_warm</button>
+            <button type="button" data-value="modern_luxury">modern_luxury</button>
+            <button type="button" data-value="cozy_family">cozy_family</button>
+          </div>
+          <input type="hidden" id="mood" value="minimal_warm" />
+        </div>
+
+        <div class="sec">
+          <h3>Camera (빠른 의도 입력)</h3>
+          <label>Angle Pad (드래그로 Pitch/Yaw 동시 제어 · 5도 스냅)</label>
+          <div class="angle-tools">
+            <div class="angle-pad-wrap">
+              <div id="anglePad" class="angle-pad" aria-label="camera-angle-pad" tabindex="0">
+                <div id="angleMarker" class="angle-marker"></div>
+              </div>
+              <div class="angle-hint"><span>Pitch: up (+)</span><span>Pitch: down (-)</span></div>
+              <div class="angle-hint"><span>Yaw: left (-)</span><span>Yaw: right (+)</span></div>
             </div>
-            <div class="angle-hint">
-              <span>Pitch: up (+)</span>
-              <span>Pitch: down (-)</span>
+            <div class="angle-row"><span>Pitch</span><input id="pitch" type="number" step="5" value="20" /></div>
+            <div class="nudge" data-angle-target="pitch">
+              <button type="button" data-delta="-10">-10</button><button type="button" data-delta="-5">-5</button><button type="button" data-delta="5">+5</button><button type="button" data-delta="10">+10</button>
             </div>
-            <div class="angle-hint">
-              <span>Yaw: left (-)</span>
-              <span>Yaw: right (+)</span>
+            <div class="angle-row"><span>Yaw</span><input id="yaw" type="number" step="5" value="30" /></div>
+            <div class="nudge" data-angle-target="yaw">
+              <button type="button" data-delta="-10">-10</button><button type="button" data-delta="-5">-5</button><button type="button" data-delta="5">+5</button><button type="button" data-delta="10">+10</button>
             </div>
           </div>
-          <div class="angle-row"><span>Pitch</span><input id="pitch" type="number" step="5" value="20" /></div>
-          <div class="nudge" data-angle-target="pitch">
-            <button type="button" data-delta="-10">-10</button>
-            <button type="button" data-delta="-5">-5</button>
-            <button type="button" data-delta="5">+5</button>
-            <button type="button" data-delta="10">+10</button>
+          <label>Quick Angle Presets (Yaw 기준)</label>
+          <div class="preset-angle" data-preset-target="yaw">
+            <button type="button" data-value="-30">left 30</button><button type="button" data-value="-20">left 20</button><button type="button" data-value="-10">left 10</button><button type="button" data-value="10">right 10</button><button type="button" data-value="20">right 20</button><button type="button" data-value="30">right 30</button>
           </div>
-          <div class="angle-row"><span>Yaw</span><input id="yaw" type="number" step="5" value="30" /></div>
-          <div class="nudge" data-angle-target="yaw">
-            <button type="button" data-delta="-10">-10</button>
-            <button type="button" data-delta="-5">-5</button>
-            <button type="button" data-delta="5">+5</button>
-            <button type="button" data-delta="10">+10</button>
+          <div class="inline">
+            <div>
+              <label>Distance</label>
+              <div class="seg seg-2" data-input="distance"><button type="button" data-value="medium">medium</button><button type="button" data-value="wide">wide</button><button type="button" data-value="close">close</button></div>
+              <input type="hidden" id="distance" value="medium" />
+            </div>
+            <div>
+              <label>Lens</label>
+              <div class="seg seg-2" data-input="lens"><button type="button" data-value="35-50">35-50</button><button type="button" data-value="24-35">24-35</button><button type="button" data-value="50-70">50-70</button></div>
+              <input type="hidden" id="lens" value="35-50" />
+            </div>
           </div>
         </div>
 
-        <label>Quick Angle Presets (Yaw 기준)</label>
-        <div class="preset-angle" data-preset-target="yaw">
-          <button type="button" data-value="-30">left 30</button>
-          <button type="button" data-value="-20">left 20</button>
-          <button type="button" data-value="-10">left 10</button>
-          <button type="button" data-value="10">right 10</button>
-          <button type="button" data-value="20">right 20</button>
-          <button type="button" data-value="30">right 30</button>
-        </div>
+        <div class="sec">
+          <h3>Product</h3>
+          <label>제품 길이(cm)</label>
+          <input id="lengthSlider" type="range" min="0" max="3" step="1" value="1" />
+          <div id="lengthLabel" class="meta"></div>
 
-        <div class="inline">
-          <div>
-            <label>Distance</label>
-            <div class="seg seg-2" data-input="distance">
-              <button type="button" data-value="medium">medium</button>
-              <button type="button" data-value="wide">wide</button>
-              <button type="button" data-value="close">close</button>
-            </div>
-            <input type="hidden" id="distance" value="medium" />
+          <label>Placement (방/환경에 따라 활성/비활성)</label>
+          <div class="seg seg-2" id="placementSeg"></div>
+          <input type="hidden" id="placement" value="side_table" />
+          <div class="custom-add">
+            <input id="customPlacement" placeholder="직접 입력 placement" />
+            <button id="addPlacement" type="button">적용</button>
           </div>
-          <div>
-            <label>Lens</label>
-            <div class="seg seg-2" data-input="lens">
-              <button type="button" data-value="35-50">35-50</button>
-              <button type="button" data-value="24-35">24-35</button>
-              <button type="button" data-value="50-70">50-70</button>
-            </div>
-            <input type="hidden" id="lens" value="35-50" />
+
+          <label>Keep-out Zone</label>
+          <div class="seg" data-input="keepout"><button type="button" data-value="small">small</button><button type="button" data-value="medium">medium</button><button type="button" data-value="large">large</button></div>
+          <input type="hidden" id="keepout" value="medium" />
+        </div>
+
+        <div class="sec">
+          <h3>Output</h3>
+          <label>Prop Density</label>
+          <div class="seg" data-input="density"><button type="button" data-value="low">low</button><button type="button" data-value="medium">medium</button><button type="button" data-value="high">high</button></div>
+          <input type="hidden" id="density" value="low" />
+
+          <label>Master Ratio</label>
+          <div class="seg seg-2" data-input="masterRatio"><button type="button" data-value="3:2">3:2</button><button type="button" data-value="1:1">1:1</button></div>
+          <input type="hidden" id="masterRatio" value="3:2" />
+
+          <label>Ratio Preview</label>
+          <div id="ratioPreview" class="preview-frame"><div class="inner">master ratio preview</div></div>
+
+          <label>Derivatives (클릭 즉시 토글)</label>
+          <div class="seg seg-3" id="derivativeSeg">
+            <button type="button" data-ratio="16:9" class="active">16:9</button>
+            <button type="button" data-ratio="1:1" class="active">1:1</button>
+            <button type="button" data-ratio="4:5" class="active">4:5</button>
           </div>
         </div>
-        <div class="warn">카메라 입력은 정밀 제어보다 의도 전달용입니다. 5도/10도 단위 권장.</div>
-      </div>
-
-      <div class="sec">
-        <h3>Product</h3>
-        <label>제품 길이(cm)</label>
-        <input id="lengthSlider" type="range" min="0" max="3" step="1" value="1" />
-        <div id="lengthLabel" class="meta"></div>
-
-        <label>Placement</label>
-        <select id="placement"></select>
-        <div class="custom-add">
-          <input id="customPlacement" placeholder="직접 입력 placement" />
-          <button id="addPlacement" type="button">적용</button>
-        </div>
-
-        <label>Keep-out Zone</label>
-        <div class="seg" data-input="keepout">
-          <button type="button" data-value="small">small</button>
-          <button type="button" data-value="medium">medium</button>
-          <button type="button" data-value="large">large</button>
-        </div>
-        <input type="hidden" id="keepout" value="medium" />
       </div>
 
       <div class="sec">
-        <h3>Props & Output</h3>
-        <label>Prop Density</label>
-        <div class="seg" data-input="density">
-          <button type="button" data-value="low">low</button>
-          <button type="button" data-value="medium">medium</button>
-          <button type="button" data-value="high">high</button>
-        </div>
-        <input type="hidden" id="density" value="low" />
-
-        <label>Master Ratio</label>
-        <div class="seg seg-2" data-input="masterRatio">
-          <button type="button" data-value="3:2">3:2</button>
-          <button type="button" data-value="1:1">1:1</button>
-        </div>
-        <input type="hidden" id="masterRatio" value="3:2" />
-
-        <label>Ratio Preview</label>
-        <div id="ratioPreview" class="preview-frame"><div class="inner">master ratio preview</div></div>
-
-        <label>Derivatives</label>
-        <div class="inline">
-          <label><input id="d169" type="checkbox" checked />16:9</label>
-          <label><input id="d11" type="checkbox" checked />1:1</label>
-        </div>
-        <label><input id="d45" type="checkbox" checked />4:5</label>
+        <div class="btns3"><button id="generate" type="button">Generate</button><button id="savePreset" type="button">Save Preset</button><button id="loadPreset" type="button">Load Preset</button></div>
+        <div class="btns"><button id="markPass" type="button">Mark Pass</button><button id="markFail" type="button">Mark Fail</button></div>
+        <div class="btns"><button id="exportLog" type="button">Export Log (MD)</button><button id="reset" type="button">Reset</button></div>
+        <div id="status"></div>
       </div>
-
-      <div class="btns3">
-        <button id="generate" type="button">Generate</button>
-        <button id="savePreset" type="button">Save Preset</button>
-        <button id="loadPreset" type="button">Load Preset</button>
-      </div>
-      <div class="btns">
-        <button id="markPass" type="button">Mark Pass</button>
-        <button id="markFail" type="button">Mark Fail</button>
-      </div>
-      <div class="btns">
-        <button id="exportLog" type="button">Export Log (MD)</button>
-        <button id="reset" type="button">Reset</button>
-      </div>
-      <div id="status"></div>
     </section>
 
-    <section class="panel">
-      <h2>2) Scene Spec / Validation</h2>
-      <div class="chips" id="gates"></div>
-      <pre id="specView"></pre>
-      <h2>세션 메모</h2>
-      <textarea id="notes" placeholder="왜 pass/fail 인지, 다음 수정 포인트를 짧게 기록"></textarea>
-    </section>
+    <section class="right-col">
+      <section class="panel">
+        <div class="right-head">
+          <h2>프롬프트 출력창</h2>
+          <p>오른쪽 영역은 생성 결과 확인 전용입니다.</p>
+        </div>
+        <label>Vizcom 생성 프롬프트</label>
+        <pre id="genPrompt"></pre>
+        <button onclick="copyText('genPrompt')">Copy Prompt</button>
+        <label>Negative Prompt</label>
+        <pre id="negPrompt"></pre>
+        <button onclick="copyText('negPrompt')">Copy Negative</button>
+        <label>Revision Prompt (각도/배치/제품강조)</label>
+        <pre id="revPrompt"></pre>
+        <button onclick="copyText('revPrompt')">Copy Revision</button>
+      </section>
 
-    <section class="panel">
-      <h2>3) Prompt Output</h2>
-      <label>Vizcom 생성 프롬프트</label>
-      <pre id="genPrompt"></pre>
-      <button onclick="copyText('genPrompt')">Copy Prompt</button>
-      <label>Negative Prompt</label>
-      <pre id="negPrompt"></pre>
-      <button onclick="copyText('negPrompt')">Copy Negative</button>
-      <label>Revision Prompt (각도/배치/제품강조)</label>
-      <pre id="revPrompt"></pre>
-      <button onclick="copyText('revPrompt')">Copy Revision</button>
+      <section class="panel">
+        <h2>Scene Spec / Validation</h2>
+        <div class="chips" id="gates"></div>
+        <pre id="specView"></pre>
+        <h2>세션 메모</h2>
+        <textarea id="notes" placeholder="왜 pass/fail 인지, 다음 수정 포인트를 짧게 기록"></textarea>
+      </section>
     </section>
   </div>
 
@@ -298,6 +260,8 @@ const CUSTOM_VALUES = {
   rooms: new Set(),
   placementsByRoom: {}
 };
+
+const BASE_PLACEMENT_CODES = ['side_table', 'tv_console', 'shelf', 'floor_near_wall'];
 
 const SURFACE_LEXICON = {
   room_surface: {
@@ -368,9 +332,8 @@ const placement = document.getElementById('placement');
 const keepout = document.getElementById('keepout');
 const density = document.getElementById('density');
 const masterRatio = document.getElementById('masterRatio');
-const d169 = document.getElementById('d169');
-const d11 = document.getElementById('d11');
-const d45 = document.getElementById('d45');
+const derivativeSeg = document.getElementById('derivativeSeg');
+const placementSeg = document.getElementById('placementSeg');
 const gates = document.getElementById('gates');
 const status = document.getElementById('status');
 const notes = document.getElementById('notes');
@@ -399,7 +362,11 @@ function initSegments(){
     const inputId = group.dataset.input;
     const input = document.getElementById(inputId);
     group.querySelectorAll('button').forEach(btn=>{
-      btn.addEventListener('click', ()=> setSegmentValue(inputId, btn.dataset.value));
+      btn.addEventListener('click', ()=> {
+        setSegmentValue(inputId, btn.dataset.value);
+        if (inputId === 'room') refreshPlacementOptions();
+        if (inputId === 'masterRatio') updateRatioPreview();
+      });
     });
     setSegmentValue(inputId, input.value);
   });
@@ -407,6 +374,21 @@ function initSegments(){
 
 function updateRatioPreview(){
   ratioPreview.style.aspectRatio = masterRatio.value.replace(':', '/');
+}
+
+function getSelectedDerivatives(){
+  return Array.from(derivativeSeg.querySelectorAll('button.active')).map(btn => btn.dataset.ratio);
+}
+
+function initDerivativeToggles(){
+  derivativeSeg.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      btn.classList.toggle('active');
+      if (!getSelectedDerivatives().length) {
+        btn.classList.add('active');
+      }
+    });
+  });
 }
 
 function getLengthBucket(){
@@ -419,7 +401,7 @@ function updateLengthLabel(){
 }
 
 function allowedPlacementCodesForRoom(roomCode){
-  return ROOM_PLACEMENT_RULES[roomCode] || Object.keys(SURFACE_LEXICON.placement_surface);
+  return ROOM_PLACEMENT_RULES[roomCode] || BASE_PLACEMENT_CODES;
 }
 
 function getPlacementOptionsForRoom(roomCode){
@@ -427,21 +409,44 @@ function getPlacementOptionsForRoom(roomCode){
     code,
     desc: SURFACE_LEXICON.placement_surface[code] || code
   }));
-  const custom = (CUSTOM_VALUES.placementsByRoom[roomCode] || []).map(value => ({ code: value, desc: value }));
+  const custom = (CUSTOM_VALUES.placementsByRoom[roomCode] || []).map(value => ({ code: value, desc: SURFACE_LEXICON.placement_surface[value] || value }));
   return [...base, ...custom];
+}
+
+function setPlacementValue(value){
+  placement.value = value;
+  placementSeg.querySelectorAll('button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === value);
+  });
 }
 
 function refreshPlacementOptions(){
   const roomCode = room.value;
   const options = getPlacementOptionsForRoom(roomCode);
-  placement.innerHTML = options.map(opt=>`<option value="${opt.code}">${opt.desc}</option>`).join('');
+  const allowed = new Set(allowedPlacementCodesForRoom(roomCode));
+
+  placementSeg.innerHTML = options.map(opt => {
+    const disabled = !allowed.has(opt.code) && !String(opt.code).startsWith('custom:');
+    return `<button type="button" data-value="${opt.code}" ${disabled ? 'disabled' : ''}>${opt.desc}</button>`;
+  }).join('');
+
+  placementSeg.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      if (btn.disabled) return;
+      setPlacementValue(btn.dataset.value);
+    });
+  });
 
   const prevValue = placement.dataset.prevValue || placement.value;
-  const isValid = options.some(opt=>opt.code === prevValue);
+  const activeOptions = options.filter(opt => {
+    const isCustom = String(opt.code).startsWith('custom:');
+    return allowed.has(opt.code) || isCustom;
+  });
+  const isValid = activeOptions.some(opt => opt.code === prevValue);
   if (isValid) {
-    placement.value = prevValue;
-  } else if (options.length) {
-    placement.value = options[0].code;
+    setPlacementValue(prevValue);
+  } else if (activeOptions.length) {
+    setPlacementValue(activeOptions[0].code);
     setStatus('Room 변경으로 Placement가 유효값으로 자동 조정되었습니다.', 'warn');
   }
   placement.dataset.prevValue = placement.value;
@@ -450,11 +455,17 @@ function refreshPlacementOptions(){
 function addCustomRoom(){
   const value = customRoomInput.value.trim();
   if (!value) return;
-  if (!Array.from(room.options).some(opt => opt.value === value)) {
-    room.insertAdjacentHTML('beforeend', `<option value="${value}">${value}</option>`);
+  if (!CUSTOM_VALUES.rooms.has(value)) {
     CUSTOM_VALUES.rooms.add(value);
+    const roomSeg = document.getElementById('roomSeg');
+    roomSeg.insertAdjacentHTML('beforeend', `<button type=\"button\" data-value=\"${value}\">${value}</button>`);
+    const btn = roomSeg.querySelector(`button[data-value=\"${value}\"]`);
+    btn.addEventListener('click', ()=> {
+      setSegmentValue('room', value);
+      refreshPlacementOptions();
+    });
   }
-  room.value = value;
+  setSegmentValue('room', value);
   customRoomInput.value = '';
   refreshPlacementOptions();
 }
@@ -464,13 +475,15 @@ function addCustomPlacement(){
   if (!value) return;
   const roomCode = room.value;
   if (!CUSTOM_VALUES.placementsByRoom[roomCode]) CUSTOM_VALUES.placementsByRoom[roomCode] = [];
-  if (!CUSTOM_VALUES.placementsByRoom[roomCode].includes(value)) {
-    CUSTOM_VALUES.placementsByRoom[roomCode].push(value);
+  const code = `custom:${value}`;
+  if (!CUSTOM_VALUES.placementsByRoom[roomCode].includes(code)) {
+    CUSTOM_VALUES.placementsByRoom[roomCode].push(code);
+    SURFACE_LEXICON.placement_surface[code] = value;
   }
   customPlacementInput.value = '';
   refreshPlacementOptions();
-  placement.value = value;
-  placement.dataset.prevValue = value;
+  setPlacementValue(code);
+  placement.dataset.prevValue = code;
 }
 
 function updateAngle(id, nextValue){
@@ -570,10 +583,7 @@ function initAngleTools(){
 }
 
 function getState(){
-  const derivatives = [];
-  if (d169.checked) derivatives.push("16:9");
-  if (d11.checked) derivatives.push("1:1");
-  if (d45.checked) derivatives.push("4:5");
+  const derivatives = getSelectedDerivatives();
 
   const lengthBucket = getLengthBucket();
   const placementCode = placement.value;
@@ -767,7 +777,14 @@ function loadPreset(){
   const raw = localStorage.getItem('preset_v1');
   if (!raw){ setStatus('저장된 preset이 없습니다.', 'warn'); return; }
   const s = JSON.parse(raw);
-  room.value = s.scene.room_code || s.scene.room;
+  const loadedRoom = s.scene.room_code || s.scene.room;
+  if (loadedRoom && !document.querySelector(`#roomSeg button[data-value=\"${loadedRoom}\"]`)) {
+    CUSTOM_VALUES.rooms.add(loadedRoom);
+    document.getElementById('roomSeg').insertAdjacentHTML('beforeend', `<button type=\"button\" data-value=\"${loadedRoom}\">${loadedRoom}</button>`);
+    document.querySelector(`#roomSeg button[data-value=\"${loadedRoom}\"]`)
+      .addEventListener('click', ()=> { setSegmentValue('room', loadedRoom); refreshPlacementOptions(); });
+  }
+  setSegmentValue('room', loadedRoom);
   refreshPlacementOptions();
   setSegmentValue('time', s.scene.time_code || s.scene.time);
   setSegmentValue('mood', s.scene.mood_code || s.scene.mood);
@@ -783,7 +800,10 @@ function loadPreset(){
   setSegmentValue('keepout', s.product.keep_out);
   setSegmentValue('density', s.props.density);
   setSegmentValue('masterRatio', s.output.master_ratio);
-  d169.checked=s.output.derivatives.includes('16:9'); d11.checked=s.output.derivatives.includes('1:1'); d45.checked=s.output.derivatives.includes('4:5');
+  derivativeSeg.querySelectorAll('button').forEach(btn => {
+    btn.classList.toggle('active', s.output.derivatives.includes(btn.dataset.ratio));
+  });
+  if (!getSelectedDerivatives().length) derivativeSeg.querySelector('button')?.classList.add('active');
   updateRatioPreview();
   syncAnglePadFromInputs();
   setStatus('Preset 불러오기 완료', 'ok');
@@ -831,7 +851,7 @@ function resetForm(){
   setSegmentValue('density', 'low');
   setSegmentValue('masterRatio', '3:2');
   updateRatioPreview();
-  d169.checked = true; d11.checked = true; d45.checked = true;
+  derivativeSeg.querySelectorAll('button').forEach(btn => btn.classList.add('active'));
   pitch.value = 20;
   yaw.value = 30;
   syncAnglePadFromInputs();
@@ -841,6 +861,7 @@ function resetForm(){
 initSegments();
 initAngleTools();
 initAnglePad();
+initDerivativeToggles();
 refreshPlacementOptions();
 updateLengthLabel();
 updateRatioPreview();
@@ -854,10 +875,7 @@ const exportLogBtn = document.getElementById('exportLog');
 const resetBtn = document.getElementById('reset');
 
 generateBtn.addEventListener('click', generate);
-room.addEventListener('change', refreshPlacementOptions);
-placement.addEventListener('change', ()=>{ placement.dataset.prevValue = placement.value; });
 lengthSlider.addEventListener('input', updateLengthLabel);
-masterRatio.addEventListener('change', updateRatioPreview);
 addRoomBtn.addEventListener('click', addCustomRoom);
 addPlacementBtn.addEventListener('click', addCustomPlacement);
 savePresetBtn.addEventListener('click', savePreset);
