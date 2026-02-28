@@ -1,4 +1,4 @@
-# QC Rubric v1.4 (Satisfaction Conditions)
+# QC Rubric v1.5 (Satisfaction Conditions)
 
 ## SCENE_ONLY
 - 생활공간의 현실감이 읽힌다.
@@ -7,7 +7,7 @@
 - 구도가 안정적이며 master + derivatives 기준 crop-safe하다.
 
 ## PRODUCT_IN_SCENE
-- 단일 히어로 주제가 명확하다.
-- 제품 주변 keep-out 여백이 유지된다.
+- 장면의 단일 초점이 명확하다.
+- 합성 준비용 clearance(keep-out)가 유지된다.
+- 지지 가구(테이블/선반/협탁) 스케일이 의도한 범위와 일치한다.
 - 카메라 의도(pitch/yaw/distance/lens)가 결과 톤과 구도에 반영된다.
-- Scene DNA와 brand moment 문장이 일관된다.

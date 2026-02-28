@@ -1,14 +1,16 @@
-# Interior Scene Prompt Builder v1.4 — System Overview
+# Interior Scene Prompt Builder v1.5 — System Overview
 
 ## Purpose
 - Build repeatable, high-quality prompts for generating interior scenes similar to user living environments.
 - Separate internal **Spec** authoring from generated **Surface Prompt** output.
 - Keep brand mood consistent through reusable **Scene DNA** presets.
+- Prioritize compositing-ready background scenes with object-ready staging surfaces.
 
 ## Non-Goals
 - This system does not guarantee pixel-perfect geometry.
 - This system does not place products in SCENE_ONLY mode.
 - This system does not rely on free-form negative text inside the main prompt body.
+- This system does not use direct product keywords in Surface Prompt output.
 
 ## Core Terms
 - **Spec**: Structured internal data model used as single source of truth for generation.
@@ -24,8 +26,8 @@
    - Product slots are disabled.
 
 2. **PRODUCT_IN_SCENE**
-   - Generate interior scene with one hero product.
-   - Product placement and scale slots are enabled.
+   - Use additional structural fields for staging-surface planning.
+   - Output phrasing remains background-first and compositing-ready.
 
 ## Scene DNA Definition
 Scene DNA is a reusable preset spec that locks interior mood through fixed slots:

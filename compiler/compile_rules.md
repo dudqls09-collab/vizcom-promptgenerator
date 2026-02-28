@@ -1,4 +1,4 @@
-# Compile Rules (Spec → Surface Prompt) v1.4
+# Compile Rules (Spec → Surface Prompt) v1.5
 
 ## Deterministic Mapping
 - Generate always compiles from the latest in-memory Spec.
@@ -19,16 +19,16 @@
 5. Camera intent
 6. Framing spec (master ratio + crop-safe derivatives)
 7. Optional PRODUCT_IN_SCENE slots
-   - product subject clause
-   - placement clause (+ keep-out)
-   - scale bucket surface phrase
-   - brand moment sentence
+   - staging surface clause
+   - clearance clause
+   - support scale phrase
+   - scene intent clause
 
 ## Mode Behavior
 - `SCENE_ONLY`
   - Product fields are ignored and must not be rendered into output prompt.
 - `PRODUCT_IN_SCENE`
-  - Product fields are required and rendered after framing section.
+  - Product fields are required for structure, but output wording must avoid direct product keywords.
 
 ## Lexicon Binding
 - `room_type` × `placement` must resolve from `lexicon/room_placement_map.yml` allowlist unless placement is custom-added by user for the same room.
