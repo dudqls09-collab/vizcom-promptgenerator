@@ -1,0 +1,40 @@
+scene_dna:
+  modern_luxury_warm:
+    palette: "warm neutral palette with mineral accents (stone grey, soft taupe)"
+    materials: "oak wood, light stone, soft textiles, matte-to-satin finishes"
+    lighting: "soft daytime window light, gentle shadow roll-off"
+    grading: "warm, low-saturation, premium editorial tone"
+    decor_density: "curated low-density styling with intentional negative space"
+    photography_vibe: "quiet luxury interior editorial mood, natural perspective"
+
+  organic_modern_plaster:
+    palette: "warm earth tones (sand, clay, oatmeal) with soft highlights"
+    materials: "hand-troweled plaster walls, warm oak, linen textiles, textured stone"
+    lighting: "diffused daylight, sculptural lighting as a gentle accent"
+    grading: "soft contrast, slightly warm, tactile texture emphasis"
+    decor_density: "minimal but lived-in, sculptural simplicity"
+    photography_vibe: "organic modern interior editorial, calm and grounded"
+
+  scandi_light_air:
+    palette: "bright neutrals (off-white, light beige, soft grey) with light-wood warmth"
+    materials: "light wood, natural linen/wool/cotton textiles"
+    lighting: "bright daytime light, airy and evenly distributed"
+    grading: "clean, bright, natural color rendering"
+    decor_density: "low-density functional decor, tidy and breathable"
+    photography_vibe: "bright airy Scandinavian lifestyle editorial"
+
+  japandi_warm_minimal:
+    palette: "warm muted neutrals (warm grey, beige) with subtle earthy notes"
+    materials: "light-to-medium wood, natural textiles, simple ceramic accents"
+    lighting: "soft daylight, calm and even illumination"
+    grading: "warm neutral, restrained saturation, serene mood"
+    decor_density: "minimal styling, functional calm, curated surfaces"
+    photography_vibe: "serene Japandi editorial, balanced comfort and minimalism"
+
+  wabi_sabi_shadow_tactile:
+    palette: "earthy subdued palette (clay, umber, warm stone) with imperfect nuance"
+    materials: "warm-toned woods, textured stone, hand-finished plaster, natural clay/ceramics"
+    lighting: "soft directional light with gentle shadow presence"
+    grading: "soft, slightly moody, texture-forward, natural imperfections visible"
+    decor_density: "very low-density, handcrafted focal accents"
+    photography_vibe: "contemplative wabi-sabi interior mood, tactile materiality"

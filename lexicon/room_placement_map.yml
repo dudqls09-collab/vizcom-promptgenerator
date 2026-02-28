@@ -1,0 +1,44 @@
+room_placement_map:
+  living_room:
+    - id: side_table
+      category: furniture_surface
+      prompt: "on a side table near the sofa"
+    - id: tv_console
+      category: furniture_surface
+      prompt: "on a low TV console with visual breathing room"
+    - id: shelf
+      category: display
+      prompt: "on a curated open shelf at seated eye level"
+    - id: floor_near_wall
+      category: floor
+      prompt: "on the floor near the wall with clean negative space"
+  bedroom:
+    - id: bedside_table
+      category: furniture_surface
+      prompt: "on a bedside table with soft textile context"
+    - id: dresser_top
+      category: furniture_surface
+      prompt: "on top of a dresser with minimal surrounding objects"
+    - id: window_bench
+      category: furniture_surface
+      prompt: "on a window bench with diffused side light"
+  study:
+    - id: desk_corner
+      category: work_surface
+      prompt: "on a desk corner with organized workstation styling"
+    - id: bookshelf_mid
+      category: display
+      prompt: "on a mid-level bookshelf compartment"
+    - id: credenza_top
+      category: furniture_surface
+      prompt: "on a credenza top with restrained decor"
+  dining:
+    - id: sideboard_top
+      category: furniture_surface
+      prompt: "on a sideboard top aligned to dining composition"
+    - id: corner_console
+      category: furniture_surface
+      prompt: "on a slim corner console near dining zone"
+    - id: wall_shelf
+      category: display
+      prompt: "on a wall shelf with sparse handcrafted accents"
