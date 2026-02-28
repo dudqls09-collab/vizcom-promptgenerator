@@ -11,13 +11,13 @@
     header { padding:14px 18px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
     h1 { margin:0; font-size:18px; }
     .meta { color:var(--muted); font-size:12px; }
-    .wrap { display:grid; grid-template-columns: 360px 1fr 1fr; gap:12px; padding:12px; min-height: calc(100vh - 56px); }
+    .wrap { display:grid; grid-template-columns: 380px 1fr 1fr; gap:12px; padding:12px; min-height: calc(100vh - 56px); }
     .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; overflow:auto; }
     .panel h2 { margin:0 0 8px; font-size:14px; }
     .sec { border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px; }
     .sec h3 { margin:0 0 8px; font-size:13px; color:#d8def0; }
-    label { display:block; font-size:12px; color:var(--muted); margin:8px 0 4px; }
-    select, input, textarea, button { width:100%; background:#12151b; color:var(--text); border:1px solid #303747; border-radius:8px; padding:8px; font-size:13px; }
+    label { display:block; font-size:12px; color:var(--muted); margin:8px 0 6px; }
+    input, textarea, button { width:100%; background:#12151b; color:var(--text); border:1px solid #303747; border-radius:8px; padding:8px; font-size:13px; }
     textarea { min-height:100px; resize:vertical; }
     .inline { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .chips { display:flex; flex-wrap:wrap; gap:6px; }
@@ -32,12 +32,51 @@
     .err { color:var(--bad); font-size:12px; margin-top:6px; }
     .ok { color:var(--ok); font-size:12px; margin-top:6px; }
     pre { white-space:pre-wrap; word-break:break-word; background:#11141a; border:1px solid #2b3342; border-radius:8px; padding:10px; font-size:12px; margin:8px 0; }
+
+    .seg { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+    .seg button { padding:7px 6px; font-size:12px; }
+    .seg button.active { background:#1e2d4d; border-color:#5c7ecf; color:#dce8ff; }
+    .seg.seg-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .seg.seg-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+
+    .angle-tools { display:grid; gap:6px; }
+    .angle-pad-wrap { border:1px solid #33405a; border-radius:10px; background:#121826; padding:8px; }
+    .angle-pad {
+      position:relative;
+      width:100%;
+      aspect-ratio:1/1;
+      border:1px solid #3b4b6f;
+      border-radius:8px;
+      background:
+        linear-gradient(to right, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%),
+        linear-gradient(to bottom, transparent 49.5%, #42557f 49.5%, #42557f 50.5%, transparent 50.5%),
+        #0f1522;
+      cursor:grab;
+      touch-action:none;
+    }
+    .angle-pad.dragging { cursor:grabbing; }
+    .angle-marker {
+      position:absolute;
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      border:2px solid #dce8ff;
+      background:#7aa2ff;
+      transform:translate(-50%, -50%);
+      box-shadow:0 0 0 3px rgba(122,162,255,0.2);
+      pointer-events:none;
+    }
+    .angle-hint { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; margin-top:4px; }
+    .angle-row { display:grid; grid-template-columns:76px 1fr; gap:6px; align-items:center; }
+    .nudge { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+    .nudge button, .preset-angle button { padding:6px; font-size:12px; }
+    .preset-angle { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:6px; }
   </style>
 </head>
 <body>
   <header>
     <h1>프롬프트 제조 UI MVP (UI + GPT)</h1>
-    <div class="meta">Brand Lock 상시 적용 · Camera Gate 강제</div>
+    <div class="meta">Brand Lock 상시 적용 · Camera Intent 반영</div>
   </header>
   <div class="wrap">
     <section class="panel" id="controls">
@@ -45,37 +84,142 @@
       <div class="sec">
         <h3>Scene</h3>
         <label>Room</label>
-        <select id="room"><option>living_room</option><option>bedroom</option><option>study</option><option>dining</option></select>
+        <div class="seg" data-input="room">
+          <button type="button" data-value="living_room">living_room</button>
+          <button type="button" data-value="bedroom">bedroom</button>
+          <button type="button" data-value="study">study</button>
+          <button type="button" data-value="dining">dining</button>
+        </div>
+        <input type="hidden" id="room" value="living_room" />
+
         <label>Time</label>
-        <select id="time"><option>day</option><option selected>evening</option><option>night</option></select>
+        <div class="seg seg-2" data-input="time">
+          <button type="button" data-value="day">day</button>
+          <button type="button" data-value="evening">evening</button>
+          <button type="button" data-value="night">night</button>
+        </div>
+        <input type="hidden" id="time" value="evening" />
+
         <label>Mood</label>
-        <select id="mood"><option selected>minimal_warm</option><option>modern_luxury</option><option>cozy_family</option></select>
+        <div class="seg" data-input="mood">
+          <button type="button" data-value="minimal_warm">minimal_warm</button>
+          <button type="button" data-value="modern_luxury">modern_luxury</button>
+          <button type="button" data-value="cozy_family">cozy_family</button>
+        </div>
+        <input type="hidden" id="mood" value="minimal_warm" />
       </div>
 
       <div class="sec">
-        <h3>Camera (Hard Gate)</h3>
-        <div class="inline">
-          <div><label>Pitch (15~30)</label><input id="pitch" type="number" min="15" max="30" value="20" /></div>
-          <div><label>Yaw (-30 or 30)</label><select id="yaw"><option value="-30">left_30</option><option value="30" selected>right_30</option></select></div>
+        <h3>Camera (빠른 의도 입력)</h3>
+        <label>Angle Pad (드래그로 Pitch/Yaw 동시 제어 · 5도 스냅)</label>
+        <div class="angle-tools">
+          <div class="angle-pad-wrap">
+            <div id="anglePad" class="angle-pad" aria-label="camera-angle-pad" tabindex="0">
+              <div id="angleMarker" class="angle-marker"></div>
+            </div>
+            <div class="angle-hint">
+              <span>Pitch: up (+)</span>
+              <span>Pitch: down (-)</span>
+            </div>
+            <div class="angle-hint">
+              <span>Yaw: left (-)</span>
+              <span>Yaw: right (+)</span>
+            </div>
+          </div>
+          <div class="angle-row"><span>Pitch</span><input id="pitch" type="number" step="5" value="20" /></div>
+          <div class="nudge" data-angle-target="pitch">
+            <button type="button" data-delta="-10">-10</button>
+            <button type="button" data-delta="-5">-5</button>
+            <button type="button" data-delta="5">+5</button>
+            <button type="button" data-delta="10">+10</button>
+          </div>
+          <div class="angle-row"><span>Yaw</span><input id="yaw" type="number" step="5" value="30" /></div>
+          <div class="nudge" data-angle-target="yaw">
+            <button type="button" data-delta="-10">-10</button>
+            <button type="button" data-delta="-5">-5</button>
+            <button type="button" data-delta="5">+5</button>
+            <button type="button" data-delta="10">+10</button>
+          </div>
         </div>
-        <div class="inline">
-          <div><label>Distance</label><select id="distance"><option selected>medium</option><option>wide</option><option>close</option></select></div>
-          <div><label>Lens</label><select id="lens"><option selected>35-50</option><option>24-35</option><option>50-70</option></select></div>
+
+        <label>Quick Angle Presets (Yaw 기준)</label>
+        <div class="preset-angle" data-preset-target="yaw">
+          <button type="button" data-value="-30">left 30</button>
+          <button type="button" data-value="-20">left 20</button>
+          <button type="button" data-value="-10">left 10</button>
+          <button type="button" data-value="10">right 10</button>
+          <button type="button" data-value="20">right 20</button>
+          <button type="button" data-value="30">right 30</button>
         </div>
-        <div class="warn">정면(0°) 금지, 상향/극단 와이드 지양.</div>
+
+        <div class="inline">
+          <div>
+            <label>Distance</label>
+            <div class="seg seg-2" data-input="distance">
+              <button type="button" data-value="medium">medium</button>
+              <button type="button" data-value="wide">wide</button>
+              <button type="button" data-value="close">close</button>
+            </div>
+            <input type="hidden" id="distance" value="medium" />
+          </div>
+          <div>
+            <label>Lens</label>
+            <div class="seg seg-2" data-input="lens">
+              <button type="button" data-value="35-50">35-50</button>
+              <button type="button" data-value="24-35">24-35</button>
+              <button type="button" data-value="50-70">50-70</button>
+            </div>
+            <input type="hidden" id="lens" value="35-50" />
+          </div>
+        </div>
+        <div class="warn">카메라 입력은 정밀 제어보다 의도 전달용입니다. 5도/10도 단위 권장.</div>
       </div>
 
       <div class="sec">
         <h3>Product</h3>
-        <label>Scale</label><select id="scale"><option>portable</option><option selected>onyx_class</option><option>tower</option></select>
-        <label>Placement</label><select id="placement"><option selected>side_table</option><option>tv_console</option><option>shelf</option><option>floor_near_wall</option></select>
-        <label>Keep-out Zone</label><select id="keepout"><option>small</option><option selected>medium</option><option>large</option></select>
+        <label>Scale</label>
+        <div class="seg" data-input="scale">
+          <button type="button" data-value="portable">portable</button>
+          <button type="button" data-value="onyx_class">onyx_class</button>
+          <button type="button" data-value="tower">tower</button>
+        </div>
+        <input type="hidden" id="scale" value="onyx_class" />
+
+        <label>Placement</label>
+        <div class="seg seg-2" data-input="placement">
+          <button type="button" data-value="side_table">side_table</button>
+          <button type="button" data-value="tv_console">tv_console</button>
+          <button type="button" data-value="shelf">shelf</button>
+          <button type="button" data-value="floor_near_wall">floor_near_wall</button>
+        </div>
+        <input type="hidden" id="placement" value="side_table" />
+
+        <label>Keep-out Zone</label>
+        <div class="seg" data-input="keepout">
+          <button type="button" data-value="small">small</button>
+          <button type="button" data-value="medium">medium</button>
+          <button type="button" data-value="large">large</button>
+        </div>
+        <input type="hidden" id="keepout" value="medium" />
       </div>
 
       <div class="sec">
         <h3>Props & Output</h3>
-        <label>Prop Density</label><select id="density"><option selected>low</option><option>medium</option><option>high</option></select>
-        <label>Master Ratio</label><select id="masterRatio"><option selected>3:2</option><option>4:3</option></select>
+        <label>Prop Density</label>
+        <div class="seg" data-input="density">
+          <button type="button" data-value="low">low</button>
+          <button type="button" data-value="medium">medium</button>
+          <button type="button" data-value="high">high</button>
+        </div>
+        <input type="hidden" id="density" value="low" />
+
+        <label>Master Ratio</label>
+        <div class="seg seg-2" data-input="masterRatio">
+          <button type="button" data-value="3:2">3:2</button>
+          <button type="button" data-value="4:3">4:3</button>
+        </div>
+        <input type="hidden" id="masterRatio" value="3:2" />
+
         <label>Derivatives</label>
         <div class="inline">
           <label><input id="d169" type="checkbox" checked />16:9</label>
@@ -85,17 +229,17 @@
       </div>
 
       <div class="btns3">
-        <button id="generate">Generate</button>
-        <button id="savePreset">Save Preset</button>
-        <button id="loadPreset">Load Preset</button>
+        <button id="generate" type="button">Generate</button>
+        <button id="savePreset" type="button">Save Preset</button>
+        <button id="loadPreset" type="button">Load Preset</button>
       </div>
       <div class="btns">
-        <button id="markPass">Mark Pass</button>
-        <button id="markFail">Mark Fail</button>
+        <button id="markPass" type="button">Mark Pass</button>
+        <button id="markFail" type="button">Mark Fail</button>
       </div>
       <div class="btns">
-        <button id="exportLog">Export Log (MD)</button>
-        <button id="reset">Reset</button>
+        <button id="exportLog" type="button">Export Log (MD)</button>
+        <button id="reset" type="button">Reset</button>
       </div>
       <div id="status"></div>
     </section>
@@ -110,7 +254,7 @@
 
     <section class="panel">
       <h2>3) Prompt Output</h2>
-      <label>Bizcom 생성 프롬프트</label>
+      <label>Vizcom 생성 프롬프트</label>
       <pre id="genPrompt"></pre>
       <button onclick="copyText('genPrompt')">Copy Prompt</button>
       <label>Negative Prompt</label>
@@ -133,7 +277,148 @@ const brandAvoid = [
   "harsh unrealistic reflections", "front-facing flat product shot"
 ];
 
+
 let logs = [];
+
+const room = document.getElementById('room');
+const time = document.getElementById('time');
+const mood = document.getElementById('mood');
+const pitch = document.getElementById('pitch');
+const yaw = document.getElementById('yaw');
+const distance = document.getElementById('distance');
+const lens = document.getElementById('lens');
+const scale = document.getElementById('scale');
+const placement = document.getElementById('placement');
+const keepout = document.getElementById('keepout');
+const density = document.getElementById('density');
+const masterRatio = document.getElementById('masterRatio');
+const d169 = document.getElementById('d169');
+const d11 = document.getElementById('d11');
+const d45 = document.getElementById('d45');
+const gates = document.getElementById('gates');
+const status = document.getElementById('status');
+const notes = document.getElementById('notes');
+const specView = document.getElementById('specView');
+const genPrompt = document.getElementById('genPrompt');
+const negPrompt = document.getElementById('negPrompt');
+const revPrompt = document.getElementById('revPrompt');
+const anglePad = document.getElementById('anglePad');
+const angleMarker = document.getElementById('angleMarker');
+
+function setSegmentValue(inputId, value){
+  const input = document.getElementById(inputId);
+  input.value = value;
+  document.querySelectorAll(`.seg[data-input="${inputId}"] button`).forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.value === value);
+  });
+}
+
+function initSegments(){
+  document.querySelectorAll('.seg[data-input]').forEach(group=>{
+    const inputId = group.dataset.input;
+    const input = document.getElementById(inputId);
+    group.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=> setSegmentValue(inputId, btn.dataset.value));
+    });
+    setSegmentValue(inputId, input.value);
+  });
+}
+
+function updateAngle(id, nextValue){
+  document.getElementById(id).value = Number(nextValue);
+}
+
+function clamp(num, min, max){
+  return Math.min(max, Math.max(min, num));
+}
+
+function syncAnglePadFromInputs(){
+  const yawValue = clamp(Number(yaw.value) || 0, -80, 80);
+  const pitchValue = clamp(Number(pitch.value) || 0, -60, 60);
+  yaw.value = yawValue;
+  pitch.value = pitchValue;
+
+  const xRatio = (yawValue + 80) / 160;
+  const yRatio = (60 - pitchValue) / 120;
+  angleMarker.style.left = `${xRatio * 100}%`;
+  angleMarker.style.top = `${yRatio * 100}%`;
+}
+
+function setAngleFromPadPointer(clientX, clientY){
+  const rect = anglePad.getBoundingClientRect();
+  const x = clamp(clientX - rect.left, 0, rect.width);
+  const y = clamp(clientY - rect.top, 0, rect.height);
+
+  const yawRaw = (x / rect.width) * 160 - 80;
+  const pitchRaw = 60 - (y / rect.height) * 120;
+
+  const yawSnap = Math.round(yawRaw / 5) * 5;
+  const pitchSnap = Math.round(pitchRaw / 5) * 5;
+
+  yaw.value = clamp(yawSnap, -80, 80);
+  pitch.value = clamp(pitchSnap, -60, 60);
+  syncAnglePadFromInputs();
+}
+
+function initAnglePad(){
+  let dragging = false;
+
+  anglePad.addEventListener('pointerdown', (event)=>{
+    dragging = true;
+    anglePad.classList.add('dragging');
+    anglePad.setPointerCapture(event.pointerId);
+    setAngleFromPadPointer(event.clientX, event.clientY);
+  });
+
+  anglePad.addEventListener('pointermove', (event)=>{
+    if (!dragging) return;
+    setAngleFromPadPointer(event.clientX, event.clientY);
+  });
+
+  anglePad.addEventListener('pointerup', (event)=>{
+    dragging = false;
+    anglePad.classList.remove('dragging');
+    anglePad.releasePointerCapture(event.pointerId);
+  });
+
+  anglePad.addEventListener('pointercancel', ()=>{
+    dragging = false;
+    anglePad.classList.remove('dragging');
+  });
+
+  pitch.addEventListener('input', syncAnglePadFromInputs);
+  yaw.addEventListener('input', syncAnglePadFromInputs);
+
+  anglePad.addEventListener('keydown', (event)=>{
+    const keyDelta = { ArrowLeft: [-5, 0], ArrowRight: [5, 0], ArrowUp: [0, 5], ArrowDown: [0, -5] }[event.key];
+    if (!keyDelta) return;
+    event.preventDefault();
+    yaw.value = Number(yaw.value || 0) + keyDelta[0];
+    pitch.value = Number(pitch.value || 0) + keyDelta[1];
+    syncAnglePadFromInputs();
+  });
+
+  syncAnglePadFromInputs();
+}
+
+function initAngleTools(){
+  document.querySelectorAll('.nudge').forEach(group=>{
+    const target = group.dataset.angleTarget;
+    group.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const current = Number(document.getElementById(target).value || 0);
+        updateAngle(target, current + Number(btn.dataset.delta));
+      });
+    });
+  });
+
+  document.querySelectorAll('.preset-angle[data-preset-target]').forEach(group=>{
+    const target = group.dataset.presetTarget;
+    group.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=> updateAngle(target, Number(btn.dataset.value)));
+    });
+  });
+}
 
 function getState(){
   const derivatives = [];
@@ -153,8 +438,10 @@ function getState(){
 function validateSpec(spec){
   const errors = [];
   const warnings = [];
-  if (spec.camera.pitch < 15 || spec.camera.pitch > 30) errors.push("Pitch must be 15~30");
-  if (![30, -30].includes(spec.camera.yaw)) errors.push("Yaw must be -30 or 30");
+
+  if (!Number.isFinite(spec.camera.pitch) || !Number.isFinite(spec.camera.yaw)) errors.push("Pitch/Yaw는 숫자여야 합니다.");
+  if (spec.camera.pitch % 5 !== 0 || spec.camera.yaw % 5 !== 0) warnings.push("카메라 각도는 5도 단위를 권장합니다.");
+  if (Math.abs(spec.camera.pitch) > 60 || Math.abs(spec.camera.yaw) > 80) warnings.push("극단 각도는 장면 왜곡 위험이 있어요.");
   if (spec.camera.distance !== "medium") warnings.push("권장 distance는 medium");
   if (spec.props.density === "high" && spec.product.keep_out === "large") warnings.push("prop density high + keep-out large 충돌 가능");
   if (spec.output.derivatives.length === 0) errors.push("At least one derivative ratio required");
@@ -167,9 +454,10 @@ function injectBrandGuard(spec){
 }
 
 function composePrompt(spec){
+  const yawDir = spec.camera.yaw >= 0 ? `right ${Math.abs(spec.camera.yaw)}` : `left ${Math.abs(spec.camera.yaw)}`;
   const gen = [
-    `Create a ${spec.scene.mood} ${spec.scene.room} in-situ interior scene for a ${spec.product.scale} home speaker.`,
-    `Camera: ${spec.camera.pitch} degrees down, ${spec.camera.yaw === 30 ? 'right 30' : 'left 30'}, ${spec.camera.distance} distance, ${spec.camera.lens}mm equivalent perspective.`,
+    `Create a ${spec.scene.mood} ${spec.scene.room} in-situ interior scene for a ${spec.product.scale} home speaker for Vizcom rendering.`,
+    `Camera intent: pitch ${spec.camera.pitch} degrees, yaw ${yawDir}, ${spec.camera.distance} distance, ${spec.camera.lens}mm equivalent perspective.`,
     `Placement: ${spec.product.placement} with ${spec.product.keep_out} keep-out area around product.`,
     `Output master ratio ${spec.output.master_ratio}, keep composition crop-safe for ${spec.output.derivatives.join(', ')}.`,
     `Brand Embrace: ${spec.brand_guard.embrace.join('; ')}.`
@@ -178,7 +466,7 @@ function composePrompt(spec){
   const neg = `Avoid: ${spec.brand_guard.avoid.join(', ')}, clutter around product, wrong perspective, distorted furniture ratio, exaggerated text elements.`;
 
   const rev = [
-    `Revision A (angle): keep same scene, adjust camera strictly to pitch 20~25 and yaw ${spec.camera.yaw}.`,
+    `Revision A (angle): keep same scene, adjust camera in 5-degree steps near pitch ${spec.camera.pitch} / yaw ${spec.camera.yaw}.`,
     `Revision B (props): reduce foreground props near product and clear keep-out zone.`,
     `Revision C (presence): increase product visibility with subtle contrast and light focus without breaking natural look.`
   ].join(' ');
@@ -231,11 +519,19 @@ function loadPreset(){
   const raw = localStorage.getItem('preset_v1');
   if (!raw){ setStatus('저장된 preset이 없습니다.', 'warn'); return; }
   const s = JSON.parse(raw);
-  room.value=s.scene.room; time.value=s.scene.time; mood.value=s.scene.mood;
-  pitch.value=s.camera.pitch; yaw.value=String(s.camera.yaw); distance.value=s.camera.distance; lens.value=s.camera.lens;
-  scale.value=s.product.scale; placement.value=s.product.placement; keepout.value=s.product.keep_out;
-  density.value=s.props.density; masterRatio.value=s.output.master_ratio;
+  setSegmentValue('room', s.scene.room);
+  setSegmentValue('time', s.scene.time);
+  setSegmentValue('mood', s.scene.mood);
+  pitch.value=s.camera.pitch; yaw.value=String(s.camera.yaw);
+  setSegmentValue('distance', s.camera.distance);
+  setSegmentValue('lens', s.camera.lens);
+  setSegmentValue('scale', s.product.scale);
+  setSegmentValue('placement', s.product.placement);
+  setSegmentValue('keepout', s.product.keep_out);
+  setSegmentValue('density', s.props.density);
+  setSegmentValue('masterRatio', s.output.master_ratio);
   d169.checked=s.output.derivatives.includes('16:9'); d11.checked=s.output.derivatives.includes('1:1'); d45.checked=s.output.derivatives.includes('4:5');
+  syncAnglePadFromInputs();
   setStatus('Preset 불러오기 완료', 'ok');
 }
 
@@ -268,16 +564,42 @@ function resetForm(){
   localStorage.removeItem('currentSpec');
   specView.textContent=''; genPrompt.textContent=''; negPrompt.textContent=''; revPrompt.textContent='';
   gates.innerHTML=''; notes.value='';
-  setStatus('세션 출력 초기화 완료', 'ok');
+  setSegmentValue('room', 'living_room');
+  setSegmentValue('time', 'evening');
+  setSegmentValue('mood', 'minimal_warm');
+  setSegmentValue('distance', 'medium');
+  setSegmentValue('lens', '35-50');
+  setSegmentValue('scale', 'onyx_class');
+  setSegmentValue('placement', 'side_table');
+  setSegmentValue('keepout', 'medium');
+  setSegmentValue('density', 'low');
+  setSegmentValue('masterRatio', '3:2');
+  d169.checked = true; d11.checked = true; d45.checked = true;
+  pitch.value = 20;
+  yaw.value = 30;
+  syncAnglePadFromInputs();
+  setStatus('기본값으로 초기화 완료', 'ok');
 }
 
-generate.addEventListener('click', generate);
-savePreset.addEventListener('click', savePreset);
-loadPreset.addEventListener('click', loadPreset);
-markPass.addEventListener('click', ()=>logResult(true));
-markFail.addEventListener('click', ()=>logResult(false));
-exportLog.addEventListener('click', exportLog);
-reset.addEventListener('click', resetForm);
+initSegments();
+initAngleTools();
+initAnglePad();
+
+const generateBtn = document.getElementById('generate');
+const savePresetBtn = document.getElementById('savePreset');
+const loadPresetBtn = document.getElementById('loadPreset');
+const markPassBtn = document.getElementById('markPass');
+const markFailBtn = document.getElementById('markFail');
+const exportLogBtn = document.getElementById('exportLog');
+const resetBtn = document.getElementById('reset');
+
+generateBtn.addEventListener('click', generate);
+savePresetBtn.addEventListener('click', savePreset);
+loadPresetBtn.addEventListener('click', loadPreset);
+markPassBtn.addEventListener('click', ()=>logResult(true));
+markFailBtn.addEventListener('click', ()=>logResult(false));
+exportLogBtn.addEventListener('click', exportLog);
+resetBtn.addEventListener('click', resetForm);
 </script>
 </body>
 </html>
