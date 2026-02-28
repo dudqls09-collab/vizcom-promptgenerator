@@ -1,0 +1,17 @@
+scale_buckets_cm:
+  - id: small_10_20
+    min_cm: 10
+    max_cm: 20
+    surface_prompt: "approx 10–20cm tall, compact tabletop scale"
+  - id: medium_21_35
+    min_cm: 21
+    max_cm: 35
+    surface_prompt: "approx 21–35cm tall, tabletop scale"
+  - id: large_36_50
+    min_cm: 36
+    max_cm: 50
+    surface_prompt: "approx 36–50cm tall, substantial tabletop or low-console scale"
+  - id: xlarge_50_plus
+    min_cm: 51
+    max_cm: null
+    surface_prompt: "approx 50cm+ tall, floor-near-furniture statement scale"
