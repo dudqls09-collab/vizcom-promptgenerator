@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Builder UI MVP</title>
+  <style>
+    :root { --bg:#0f1115; --panel:#171a21; --line:#2a2f3a; --text:#e9edf5; --muted:#a4adbd; --accent:#7aa2ff; --ok:#19c37d; --warn:#ffb020; --bad:#ff5d6c; }
+    * { box-sizing:border-box; font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+    body { margin:0; background:var(--bg); color:var(--text); }
+    header { padding:14px 18px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
+    h1 { margin:0; font-size:18px; }
+    .meta { color:var(--muted); font-size:12px; }
+    .wrap { display:grid; grid-template-columns: 360px 1fr 1fr; gap:12px; padding:12px; min-height: calc(100vh - 56px); }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; overflow:auto; }
+    .panel h2 { margin:0 0 8px; font-size:14px; }
+    .sec { border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px; }
+    .sec h3 { margin:0 0 8px; font-size:13px; color:#d8def0; }
+    label { display:block; font-size:12px; color:var(--muted); margin:8px 0 4px; }
+    select, input, textarea, button { width:100%; background:#12151b; color:var(--text); border:1px solid #303747; border-radius:8px; padding:8px; font-size:13px; }
+    textarea { min-height:100px; resize:vertical; }
+    .inline { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; }
+    .chip { padding:4px 8px; border-radius:999px; font-size:11px; border:1px solid #39445d; background:#151c2b; }
+    .chip.bad { border-color: #6d2b35; background:#2a1418; color:#ffadb7; }
+    .chip.ok { border-color: #1f5a43; background:#11251d; color:#96f0c8; }
+    .btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+    .btns3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:8px; }
+    button { cursor:pointer; }
+    button:hover { border-color:var(--accent); }
+    .warn { color:var(--warn); font-size:12px; margin-top:6px; }
+    .err { color:var(--bad); font-size:12px; margin-top:6px; }
+    .ok { color:var(--ok); font-size:12px; margin-top:6px; }
+    pre { white-space:pre-wrap; word-break:break-word; background:#11141a; border:1px solid #2b3342; border-radius:8px; padding:10px; font-size:12px; margin:8px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>프롬프트 제조 UI MVP (UI + GPT)</h1>
+    <div class="meta">Brand Lock 상시 적용 · Camera Gate 강제</div>
+  </header>
+  <div class="wrap">
+    <section class="panel" id="controls">
+      <h2>1) 옵션 선택</h2>
+      <div class="sec">
+        <h3>Scene</h3>
+        <label>Room</label>
+        <select id="room"><option>living_room</option><option>bedroom</option><option>study</option><option>dining</option></select>
+        <label>Time</label>
+        <select id="time"><option>day</option><option selected>evening</option><option>night</option></select>
+        <label>Mood</label>
+        <select id="mood"><option selected>minimal_warm</option><option>modern_luxury</option><option>cozy_family</option></select>
+      </div>
+
+      <div class="sec">
+        <h3>Camera (Hard Gate)</h3>
+        <div class="inline">
+          <div><label>Pitch (15~30)</label><input id="pitch" type="number" min="15" max="30" value="20" /></div>
+          <div><label>Yaw (-30 or 30)</label><select id="yaw"><option value="-30">left_30</option><option value="30" selected>right_30</option></select></div>
+        </div>
+        <div class="inline">
+          <div><label>Distance</label><select id="distance"><option selected>medium</option><option>wide</option><option>close</option></select></div>
+          <div><label>Lens</label><select id="lens"><option selected>35-50</option><option>24-35</option><option>50-70</option></select></div>
+        </div>
+        <div class="warn">정면(0°) 금지, 상향/극단 와이드 지양.</div>
+      </div>
+
+      <div class="sec">
+        <h3>Product</h3>
+        <label>Scale</label><select id="scale"><option>portable</option><option selected>onyx_class</option><option>tower</option></select>
+        <label>Placement</label><select id="placement"><option selected>side_table</option><option>tv_console</option><option>shelf</option><option>floor_near_wall</option></select>
+        <label>Keep-out Zone</label><select id="keepout"><option>small</option><option selected>medium</option><option>large</option></select>
+      </div>
+
+      <div class="sec">
+        <h3>Props & Output</h3>
+        <label>Prop Density</label><select id="density"><option selected>low</option><option>medium</option><option>high</option></select>
+        <label>Master Ratio</label><select id="masterRatio"><option selected>3:2</option><option>4:3</option></select>
+        <label>Derivatives</label>
+        <div class="inline">
+          <label><input id="d169" type="checkbox" checked />16:9</label>
+          <label><input id="d11" type="checkbox" checked />1:1</label>
+        </div>
+        <label><input id="d45" type="checkbox" checked />4:5</label>
+      </div>
+
+      <div class="btns3">
+        <button id="generate">Generate</button>
+        <button id="savePreset">Save Preset</button>
+        <button id="loadPreset">Load Preset</button>
+      </div>
+      <div class="btns">
+        <button id="markPass">Mark Pass</button>
+        <button id="markFail">Mark Fail</button>
+      </div>
+      <div class="btns">
+        <button id="exportLog">Export Log (MD)</button>
+        <button id="reset">Reset</button>
+      </div>
+      <div id="status"></div>
+    </section>
+
+    <section class="panel">
+      <h2>2) Scene Spec / Validation</h2>
+      <div class="chips" id="gates"></div>
+      <pre id="specView"></pre>
+      <h2>세션 메모</h2>
+      <textarea id="notes" placeholder="왜 pass/fail 인지, 다음 수정 포인트를 짧게 기록"></textarea>
+    </section>
+
+    <section class="panel">
+      <h2>3) Prompt Output</h2>
+      <label>Bizcom 생성 프롬프트</label>
+      <pre id="genPrompt"></pre>
+      <button onclick="copyText('genPrompt')">Copy Prompt</button>
+      <label>Negative Prompt</label>
+      <pre id="negPrompt"></pre>
+      <button onclick="copyText('negPrompt')">Copy Negative</button>
+      <label>Revision Prompt (각도/배치/제품강조)</label>
+      <pre id="revPrompt"></pre>
+      <button onclick="copyText('revPrompt')">Copy Revision</button>
+    </section>
+  </div>
+
+<script>
+const brandEmbrace = [
+  "harmonious interplay of sound, light, and design",
+  "evocative in-situ moment in curated home interior",
+  "warm natural materials (wood, fabric, stone), tasteful composition"
+];
+const brandAvoid = [
+  "posed portrait", "camera eye contact", "overly busy decor", "sterile mono-material look",
+  "harsh unrealistic reflections", "front-facing flat product shot"
+];
+
+let logs = [];
+
+function getState(){
+  const derivatives = [];
+  if (d169.checked) derivatives.push("16:9");
+  if (d11.checked) derivatives.push("1:1");
+  if (d45.checked) derivatives.push("4:5");
+  return {
+    scene: { room: room.value, time: time.value, mood: mood.value },
+    camera: { pitch: Number(pitch.value), yaw: Number(yaw.value), distance: distance.value, lens: lens.value },
+    product: { scale: scale.value, placement: placement.value, keep_out: keepout.value },
+    props: { density: density.value, avoid_near_product: true },
+    output: { master_ratio: masterRatio.value, derivatives },
+    brand_lock: { embrace: "required", avoid: "required" }
+  };
+}
+
+function validateSpec(spec){
+  const errors = [];
+  const warnings = [];
+  if (spec.camera.pitch < 15 || spec.camera.pitch > 30) errors.push("Pitch must be 15~30");
+  if (![30, -30].includes(spec.camera.yaw)) errors.push("Yaw must be -30 or 30");
+  if (spec.camera.distance !== "medium") warnings.push("권장 distance는 medium");
+  if (spec.props.density === "high" && spec.product.keep_out === "large") warnings.push("prop density high + keep-out large 충돌 가능");
+  if (spec.output.derivatives.length === 0) errors.push("At least one derivative ratio required");
+  return { errors, warnings };
+}
+
+function injectBrandGuard(spec){
+  spec.brand_guard = { embrace: brandEmbrace, avoid: brandAvoid };
+  return spec;
+}
+
+function composePrompt(spec){
+  const gen = [
+    `Create a ${spec.scene.mood} ${spec.scene.room} in-situ interior scene for a ${spec.product.scale} home speaker.`,
+    `Camera: ${spec.camera.pitch} degrees down, ${spec.camera.yaw === 30 ? 'right 30' : 'left 30'}, ${spec.camera.distance} distance, ${spec.camera.lens}mm equivalent perspective.`,
+    `Placement: ${spec.product.placement} with ${spec.product.keep_out} keep-out area around product.`,
+    `Output master ratio ${spec.output.master_ratio}, keep composition crop-safe for ${spec.output.derivatives.join(', ')}.`,
+    `Brand Embrace: ${spec.brand_guard.embrace.join('; ')}.`
+  ].join(' ');
+
+  const neg = `Avoid: ${spec.brand_guard.avoid.join(', ')}, clutter around product, wrong perspective, distorted furniture ratio, exaggerated text elements.`;
+
+  const rev = [
+    `Revision A (angle): keep same scene, adjust camera strictly to pitch 20~25 and yaw ${spec.camera.yaw}.`,
+    `Revision B (props): reduce foreground props near product and clear keep-out zone.`,
+    `Revision C (presence): increase product visibility with subtle contrast and light focus without breaking natural look.`
+  ].join(' ');
+
+  return { gen, neg, rev };
+}
+
+function renderGates({errors, warnings}){
+  gates.innerHTML = '';
+  if (errors.length === 0) addChip('Validation Pass', 'ok');
+  errors.forEach(e => addChip(e, 'bad'));
+  warnings.forEach(w => addChip(w, 'warn'));
+}
+function addChip(text, type){
+  const div = document.createElement('div');
+  div.className = `chip ${type==='ok'?'ok': type==='bad'?'bad':''}`;
+  div.textContent = text;
+  gates.appendChild(div);
+}
+
+function setStatus(msg, type='ok'){ status.className = type; status.textContent = msg; }
+
+function generate(){
+  let spec = getState();
+  const result = validateSpec(spec);
+  renderGates(result);
+  if (result.errors.length){
+    setStatus('생성 차단: Validation 오류를 먼저 수정하세요.', 'err');
+    return;
+  }
+  spec = injectBrandGuard(spec);
+  const prompt = composePrompt(spec);
+  specView.textContent = JSON.stringify(spec, null, 2);
+  genPrompt.textContent = prompt.gen;
+  negPrompt.textContent = prompt.neg;
+  revPrompt.textContent = prompt.rev;
+  localStorage.setItem('currentSpec', JSON.stringify(spec));
+  setStatus('프롬프트 생성 완료.', 'ok');
+}
+
+function copyText(id){
+  navigator.clipboard.writeText(document.getElementById(id).textContent || '').then(()=>setStatus('복사 완료', 'ok'));
+}
+
+function savePreset(){
+  localStorage.setItem('preset_v1', JSON.stringify(getState()));
+  setStatus('Preset 저장 완료', 'ok');
+}
+function loadPreset(){
+  const raw = localStorage.getItem('preset_v1');
+  if (!raw){ setStatus('저장된 preset이 없습니다.', 'warn'); return; }
+  const s = JSON.parse(raw);
+  room.value=s.scene.room; time.value=s.scene.time; mood.value=s.scene.mood;
+  pitch.value=s.camera.pitch; yaw.value=String(s.camera.yaw); distance.value=s.camera.distance; lens.value=s.camera.lens;
+  scale.value=s.product.scale; placement.value=s.product.placement; keepout.value=s.product.keep_out;
+  density.value=s.props.density; masterRatio.value=s.output.master_ratio;
+  d169.checked=s.output.derivatives.includes('16:9'); d11.checked=s.output.derivatives.includes('1:1'); d45.checked=s.output.derivatives.includes('4:5');
+  setStatus('Preset 불러오기 완료', 'ok');
+}
+
+function logResult(pass){
+  const spec = JSON.parse(localStorage.getItem('currentSpec') || 'null');
+  if (!spec){ setStatus('먼저 Generate를 실행하세요.', 'warn'); return; }
+  logs.push({ time: new Date().toISOString(), pass, notes: notes.value.trim(), spec });
+  setStatus(pass ? 'Pass 기록됨' : 'Fail 기록됨', pass ? 'ok' : 'warn');
+}
+
+function exportLog(){
+  if (!logs.length){ setStatus('내보낼 로그가 없습니다.', 'warn'); return; }
+  let md = '# Session Log\n\n';
+  logs.forEach((l,i)=>{
+    md += `## ${i+1}. ${l.pass?'PASS':'FAIL'} - ${l.time}\n`;
+    md += `- notes: ${l.notes || '(none)'}\n`;
+    md += `- scene: ${l.spec.scene.room}/${l.spec.scene.time}/${l.spec.scene.mood}\n`;
+    md += `- camera: pitch ${l.spec.camera.pitch}, yaw ${l.spec.camera.yaw}, ${l.spec.camera.distance}\n\n`;
+  });
+  const blob = new Blob([md], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'session_log.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  setStatus('로그 내보내기 완료', 'ok');
+}
+
+function resetForm(){
+  localStorage.removeItem('currentSpec');
+  specView.textContent=''; genPrompt.textContent=''; negPrompt.textContent=''; revPrompt.textContent='';
+  gates.innerHTML=''; notes.value='';
+  setStatus('세션 출력 초기화 완료', 'ok');
+}
+
+generate.addEventListener('click', generate);
+savePreset.addEventListener('click', savePreset);
+loadPreset.addEventListener('click', loadPreset);
+markPass.addEventListener('click', ()=>logResult(true));
+markFail.addEventListener('click', ()=>logResult(false));
+exportLog.addEventListener('click', exportLog);
+reset.addEventListener('click', resetForm);
+</script>
+</body>
+</html>
