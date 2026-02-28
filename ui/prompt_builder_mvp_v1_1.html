@@ -838,7 +838,7 @@ function resetForm(){
   localStorage.removeItem('currentSpec');
   specView.textContent=''; genPrompt.textContent=''; negPrompt.textContent=''; revPrompt.textContent='';
   gates.innerHTML=''; notes.value='';
-  setSegmentValue('room', 'living_room');
+  room.value = 'living_room';
   setSegmentValue('time', 'evening');
   setSegmentValue('mood', 'minimal_warm');
   setSegmentValue('distance', 'medium');
