@@ -27,14 +27,16 @@ framing: master {master_ratio}, crop-safe for {derivatives}"
 ## PRODUCT_IN_SCENE
 "{room_type} interior, {time_of_day} light, {mood},
 {architecture_layout},
-{product_subject_clause},
-placement: {placement_clause}, keep-out: {keepout_clause},
 scene palette: {scene_dna.palette},
 scene materials: {scene_dna.materials},
 scene lighting: {scene_dna.lighting},
 scene tone: {scene_dna.grading},
 decor: {scene_dna.decor_density},
 photography: {scene_dna.photography_vibe},
+anchor zone: {anchor_rule},
 camera: three-quarter view, pitch {pitch}°, yaw {yaw_dir} {yaw}°, {distance}, {lens_mm_equiv}mm,
 framing: master {master_ratio}, crop-safe for {derivatives},
+{product_subject_clause},
+placement: {placement_clause}, keep-out: {keepout_clause},
+scale: {scale_bucket_surface_phrase},
 brand moment: {brand_moment_sentence}"
