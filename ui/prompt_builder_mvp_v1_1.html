@@ -283,6 +283,32 @@ const SURFACE_LEXICON = {
     onyx_class: "compact tabletop home speaker, approx 28–32cm tall, single hero product",
     tower: "tall floorstanding home speaker, approx 90–120cm tall, single hero product"
   },
+  room_surface: {
+    living_room: 'living room',
+    bedroom: 'bedroom',
+    study: 'study room',
+    dining: 'dining room'
+  },
+  time_surface: {
+    day: 'daytime',
+    evening: 'evening',
+    night: 'night'
+  },
+  mood_surface: {
+    minimal_warm: 'minimal warm',
+    modern_luxury: 'modern luxury',
+    cozy_family: 'cozy family'
+  },
+  distance_surface: {
+    close: 'close',
+    medium: 'medium',
+    wide: 'wide'
+  },
+  lens_surface: {
+    '24-35': '24-35',
+    '35-50': '35-50',
+    '50-70': '50-70'
+  },
   placement_surface: {
     side_table: "on a side table",
     tv_console: "on a TV console",
@@ -466,8 +492,22 @@ function getState(){
   const keepoutCode = keepout.value;
 
   return {
-    scene: { room: room.value, time: time.value, mood: mood.value },
-    camera: { pitch: Number(pitch.value), yaw: Number(yaw.value), distance: distance.value, lens: lens.value },
+    scene: {
+      room_code: room.value,
+      room_desc: SURFACE_LEXICON.room_surface[room.value] || room.value,
+      time_code: time.value,
+      time_desc: SURFACE_LEXICON.time_surface[time.value] || time.value,
+      mood_code: mood.value,
+      mood_desc: SURFACE_LEXICON.mood_surface[mood.value] || mood.value
+    },
+    camera: {
+      pitch: Number(pitch.value),
+      yaw: Number(yaw.value),
+      distance_code: distance.value,
+      distance_desc: SURFACE_LEXICON.distance_surface[distance.value] || distance.value,
+      lens_code: lens.value,
+      lens_desc: SURFACE_LEXICON.lens_surface[lens.value] || lens.value
+    },
     product: {
       scale_code: scaleCode,
       scale_desc: SURFACE_LEXICON.scale_surface[scaleCode] || "home speaker, single hero product",
@@ -489,12 +529,14 @@ function validateSpec(spec){
   if (!Number.isFinite(spec.camera.pitch) || !Number.isFinite(spec.camera.yaw)) errors.push("Pitch/Yaw는 숫자여야 합니다.");
   if (spec.camera.pitch % 5 !== 0 || spec.camera.yaw % 5 !== 0) warnings.push("카메라 각도는 5도 단위를 권장합니다.");
   if (Math.abs(spec.camera.pitch) > 60 || Math.abs(spec.camera.yaw) > 80) warnings.push("극단 각도는 장면 왜곡 위험이 있어요.");
-  if (spec.camera.distance !== "medium") warnings.push("권장 distance는 medium");
+  if (spec.camera.distance_code !== "medium") warnings.push("권장 distance는 medium");
   if (spec.props.density === "high" && spec.product.keep_out === "large") warnings.push("prop density high + keep-out large 충돌 가능");
   if (spec.output.derivatives.length === 0) errors.push("At least one derivative ratio required");
   if (!spec.product.scale_desc) errors.push("scale_code에 대응하는 scale_desc가 없습니다.");
   if (!spec.product.placement_desc) errors.push("placement_code에 대응하는 placement_desc가 없습니다.");
   if (!spec.product.keepout_desc) errors.push("keep_out에 대응하는 keepout_desc가 없습니다.");
+  if (!spec.scene.room_desc || !spec.scene.time_desc || !spec.scene.mood_desc) errors.push("scene code에 대응하는 surface desc가 없습니다.");
+  if (!spec.camera.distance_desc || !spec.camera.lens_desc) errors.push("camera code에 대응하는 surface desc가 없습니다.");
 
   return { errors, warnings };
 }
@@ -508,17 +550,17 @@ function composePrompt(spec){
   const yawDir = spec.camera.yaw >= 0 ? `right ${Math.abs(spec.camera.yaw)}°` : `left ${Math.abs(spec.camera.yaw)}°`;
   const derivatives = spec.output.derivatives.join(', ');
   const gen = [
-    `${spec.scene.mood} ${spec.scene.room} interior`,
+    `${spec.scene.mood_desc} ${spec.scene.room_desc} interior`,
     'in-situ lifestyle scene',
-    `${spec.scene.time} lighting`,
+    `${spec.scene.time_desc} lighting`,
     `${spec.product.scale_desc}`,
     `${spec.product.placement_desc}`,
     `${spec.product.keepout_desc}`,
     'three-quarter view',
     `pitch ${spec.camera.pitch}°`,
     `yaw ${yawDir}`,
-    `${spec.camera.distance} distance`,
-    `${spec.camera.lens}mm perspective`,
+    `${spec.camera.distance_desc} distance`,
+    `${spec.camera.lens_desc}mm perspective`,
     'warm natural materials wood fabric stone',
     'tasteful composition',
     `crop-safe master ${spec.output.master_ratio} for ${derivatives}`,
@@ -627,12 +669,12 @@ function loadPreset(){
   const raw = localStorage.getItem('preset_v1');
   if (!raw){ setStatus('저장된 preset이 없습니다.', 'warn'); return; }
   const s = JSON.parse(raw);
-  setSegmentValue('room', s.scene.room);
-  setSegmentValue('time', s.scene.time);
-  setSegmentValue('mood', s.scene.mood);
+  setSegmentValue('room', s.scene.room_code || s.scene.room);
+  setSegmentValue('time', s.scene.time_code || s.scene.time);
+  setSegmentValue('mood', s.scene.mood_code || s.scene.mood);
   pitch.value=s.camera.pitch; yaw.value=String(s.camera.yaw);
-  setSegmentValue('distance', s.camera.distance);
-  setSegmentValue('lens', s.camera.lens);
+  setSegmentValue('distance', s.camera.distance_code || s.camera.distance);
+  setSegmentValue('lens', s.camera.lens_code || s.camera.lens);
   setSegmentValue('scale', s.product.scale_code || s.product.scale);
   setSegmentValue('placement', s.product.placement_code || s.product.placement);
   setSegmentValue('keepout', s.product.keep_out);
@@ -656,8 +698,8 @@ function exportLog(){
   logs.forEach((l,i)=>{
     md += `## ${i+1}. ${l.pass?'PASS':'FAIL'} - ${l.time}\n`;
     md += `- notes: ${l.notes || '(none)'}\n`;
-    md += `- scene: ${l.spec.scene.room}/${l.spec.scene.time}/${l.spec.scene.mood}\n`;
-    md += `- camera: pitch ${l.spec.camera.pitch}, yaw ${l.spec.camera.yaw}, ${l.spec.camera.distance}\n\n`;
+    md += `- scene: ${l.spec.scene.room_code}/${l.spec.scene.time_code}/${l.spec.scene.mood_code} -> ${l.spec.scene.room_desc}/${l.spec.scene.time_desc}/${l.spec.scene.mood_desc}\n`;
+    md += `- camera: pitch ${l.spec.camera.pitch}, yaw ${l.spec.camera.yaw}, ${l.spec.camera.distance_code} (${l.spec.camera.distance_desc})\n\n`;
   });
   const blob = new Blob([md], {type:'text/markdown'});
   const a = document.createElement('a');

@@ -7,21 +7,26 @@
   "properties": {
     "scene": {
       "type": "object",
-      "required": ["room", "time", "mood"],
+      "required": ["room_code", "room_desc", "time_code", "time_desc", "mood_code", "mood_desc"],
       "properties": {
-        "room": { "type": "string" },
-        "time": { "type": "string" },
-        "mood": { "type": "string" }
+        "room_code": { "type": "string" },
+        "room_desc": { "type": "string" },
+        "time_code": { "type": "string" },
+        "time_desc": { "type": "string" },
+        "mood_code": { "type": "string" },
+        "mood_desc": { "type": "string" }
       }
     },
     "camera": {
       "type": "object",
-      "required": ["pitch", "yaw", "distance", "lens"],
+      "required": ["pitch", "yaw", "distance_code", "distance_desc", "lens_code", "lens_desc"],
       "properties": {
         "pitch": { "type": "number" },
         "yaw": { "type": "number" },
-        "distance": { "type": "string" },
-        "lens": { "type": "string" }
+        "distance_code": { "type": "string" },
+        "distance_desc": { "type": "string" },
+        "lens_code": { "type": "string" },
+        "lens_desc": { "type": "string" }
       }
     },
     "product": {
