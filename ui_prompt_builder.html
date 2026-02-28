@@ -214,7 +214,7 @@
 
     <section class="panel">
       <h2>3) Prompt Output</h2>
-      <label>Vizcom 생성 프롬프트</label>
+      <label>Bizcom 생성 프롬프트</label>
       <pre id="genPrompt"></pre>
       <button onclick="copyText('genPrompt')">Copy Prompt</button>
       <label>Negative Prompt</label>
@@ -236,7 +236,6 @@ const brandAvoid = [
   "posed portrait", "camera eye contact", "overly busy decor", "sterile mono-material look",
   "harsh unrealistic reflections", "front-facing flat product shot"
 ];
-
 
 let logs = [];
 
@@ -393,7 +392,6 @@ function loadPreset(){
   setSegmentValue('density', s.props.density);
   setSegmentValue('masterRatio', s.output.master_ratio);
   d169.checked=s.output.derivatives.includes('16:9'); d11.checked=s.output.derivatives.includes('1:1'); d45.checked=s.output.derivatives.includes('4:5');
-  syncAnglePadFromInputs();
   setStatus('Preset 불러오기 완료', 'ok');
 }
 
